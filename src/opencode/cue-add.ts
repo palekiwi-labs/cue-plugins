@@ -1,8 +1,8 @@
-import { tool } from "@opencode-ai/plugin"
+import { type Plugin, tool } from "@opencode-ai/plugin"
 import { join } from "node:path"
 import { tmpdir } from "node:os"
 
-export default tool({
+export const cueAddTool = tool({
   description: "Create a new cue artifact (spec, doc, trace, etc.).",
   args: {
     type: tool.schema.string().default("spec").describe(
@@ -28,16 +28,16 @@ export default tool({
     try {
       // 1. Write content directly to a temporary file (Safe, no shell involved)
       await Bun.write(tempPath, args.content)
-      
+
       // 2. Tell cue to read from that file (Safe, content is not a CLI arg)
       const rootFlag = args.root ? ["--root"] : []
       const branchFlag = args.branch ? ["--branch", args.branch] : []
-      const frontmatterFlags = args.frontmatter 
+      const frontmatterFlags = args.frontmatter
         ? Object.entries(args.frontmatter).flatMap(([k, v]) => ["--frontmatter", `${k}=${v}`])
         : []
- 
+
       const output = await Bun.$`cue add --type ${args.type} ${rootFlag} ${branchFlag} ${frontmatterFlags} --file ${tempPath} ${args.filename}`.text()
-      
+
       return output.trim()
     } finally {
       // 3. Clean up the temporary file
@@ -48,3 +48,13 @@ export default tool({
     }
   },
 })
+
+const CueAddPlugin: Plugin = async () => {
+  return {
+    tool: {
+      "cue-add": cueAddTool,
+    },
+  }
+}
+
+export default CueAddPlugin

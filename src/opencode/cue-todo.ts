@@ -1,7 +1,7 @@
-import { tool } from "@opencode-ai/plugin"
-import cueAdd from "./cue-add"
- 
-export default tool({
+import { type Plugin, tool } from "@opencode-ai/plugin"
+import { cueAddTool } from "./cue-add"
+
+export const cueTodoTool = tool({
   description: "Create a new todo artifact.",
   args: {
     filename: tool.schema.string().describe("Name of the file (e.g., 'review-items.md')"),
@@ -14,7 +14,7 @@ export default tool({
     ),
   },
   async execute(args, context) {
-    return await cueAdd.execute({
+    return await cueAddTool.execute({
       type: "todo",
       filename: args.filename,
       content: args.content,
@@ -26,3 +26,13 @@ export default tool({
     }, context)
   },
 })
+
+const CueTodoPlugin: Plugin = async () => {
+  return {
+    tool: {
+      "cue-todo": cueTodoTool,
+    },
+  }
+}
+
+export default CueTodoPlugin

@@ -1,7 +1,7 @@
-import { tool } from "@opencode-ai/plugin"
-import cueAdd from "./cue-add"
- 
-export default tool({
+import { type Plugin, tool } from "@opencode-ai/plugin"
+import { cueAddTool } from "./cue-add"
+
+export const cueTaskTool = tool({
   description: "Create a new task artifact (kanban board card). Always saved to the master branch.",
   args: {
     filename: tool.schema.string().describe("Slug-based name (e.g., 'auth-login.md'). No numeric ID."),
@@ -15,7 +15,7 @@ export default tool({
     ),
   },
   async execute(args, context) {
-    return await cueAdd.execute({
+    return await cueAddTool.execute({
       type: "task",
       filename: args.filename,
       content: args.content,
@@ -29,3 +29,13 @@ export default tool({
     }, context)
   },
 })
+
+const CueTaskPlugin: Plugin = async () => {
+  return {
+    tool: {
+      "cue-task": cueTaskTool,
+    },
+  }
+}
+
+export default CueTaskPlugin

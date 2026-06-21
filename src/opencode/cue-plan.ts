@@ -1,7 +1,7 @@
-import { tool } from "@opencode-ai/plugin"
-import cueAdd from "./cue-add"
- 
-export default tool({
+import { type Plugin, tool } from "@opencode-ai/plugin"
+import { cueAddTool } from "./cue-add"
+
+export const cuePlanTool = tool({
   description: "Create a new plan artifact.",
   args: {
     filename: tool.schema.string().describe("Name of the file (e.g., 'slice1.md')"),
@@ -15,7 +15,7 @@ export default tool({
     ),
   },
   async execute(args, context) {
-    return await cueAdd.execute({
+    return await cueAddTool.execute({
       type: "plan",
       filename: args.filename,
       content: args.content,
@@ -26,3 +26,13 @@ export default tool({
     }, context)
   },
 })
+
+const CuePlanPlugin: Plugin = async () => {
+  return {
+    tool: {
+      "cue-plan": cuePlanTool,
+    },
+  }
+}
+
+export default CuePlanPlugin

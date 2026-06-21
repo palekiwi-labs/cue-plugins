@@ -1,8 +1,8 @@
-import { tool } from "@opencode-ai/plugin"
+import { type Plugin, tool } from "@opencode-ai/plugin"
 import { join } from "node:path"
 import { tmpdir } from "node:os"
 
-export default tool({
+export const cueLogTool = tool({
   description: "Add a structured log entry to the memory system.",
   args: {
     title: tool.schema.string().describe("Title of the log entry"),
@@ -13,7 +13,7 @@ export default tool({
   },
   async execute(args) {
     const tempPath = join(tmpdir(), `cue-log-${Date.now()}.json`)
-    
+
     // Create the JSON payload for the cue CLI
     const payload = {
       title: args.title,
@@ -22,7 +22,7 @@ export default tool({
       decided: args.decided,
       open: args.open,
     }
- 
+
     try {
       await Bun.write(tempPath, JSON.stringify(payload))
       await Bun.$`cue log add --file ${tempPath}`.quiet()
@@ -36,3 +36,13 @@ export default tool({
     }
   },
 })
+
+const CueLogPlugin: Plugin = async () => {
+  return {
+    tool: {
+      "cue-log": cueLogTool,
+    },
+  }
+}
+
+export default CueLogPlugin
