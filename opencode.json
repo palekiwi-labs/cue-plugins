@@ -3,5 +3,10 @@
   "plugin": [
     "@ex-machina/opencode-anthropic-auth@1.8.1",
     "./src/opencode/acuity-plugin.ts"
-  ]
+  ],
+  "permission": {
+    "bash": {
+      "bun *": "allow"
+    }
+  }
 }
