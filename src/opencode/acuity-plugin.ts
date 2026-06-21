@@ -1,6 +1,6 @@
 import type { Plugin } from "@opencode-ai/plugin";
 import type { Event } from "@opencode-ai/sdk";
-import type { SessionIdle } from "./types";
+import type { SessionIdle } from "../types";
 
 const ACUITY_HOST = process.env.ACUITY_HOST ?? "http://localhost:33222";
 
