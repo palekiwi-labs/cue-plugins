@@ -29,7 +29,14 @@ const plugin: Plugin = async ({ client, directory }) => {
         },
         body: JSON.stringify(payload),
       }).catch((err: unknown) => {
-        console.error("[acuity-plugin] failed to post event:", err);
+        client.app.log({
+          body: {
+            service: "acuity-plugin",
+            level: "error",
+            message: "failed to post session.idle event",
+            extra: { error: String(err), host: ACUITY_HOST },
+          },
+        });
       });
     },
   };
