@@ -3,6 +3,7 @@
   "devDependencies": {
     "@opencode-ai/plugin": "*",
     "@opencode-ai/sdk": "*",
+    "@types/node": "*",
     "typescript": "*"
   }
 }
