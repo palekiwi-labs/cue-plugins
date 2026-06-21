@@ -1,7 +1,8 @@
 import { type Plugin, tool } from "@opencode-ai/plugin"
-import { cueAddTool } from "./cue-add"
+import { join } from "node:path"
+import { tmpdir } from "node:os"
 
-export const cueTodoTool = tool({
+const cueTodoTool = tool({
   description: "Create a new todo artifact.",
   args: {
     filename: tool.schema.string().describe("Name of the file (e.g., 'review-items.md')"),
@@ -14,25 +15,34 @@ export const cueTodoTool = tool({
     ),
   },
   async execute(args, context) {
-    return await cueAddTool.execute({
-      type: "todo",
-      filename: args.filename,
-      content: args.content,
-      root: false,
-      frontmatter: {
+    const tempPath = join(tmpdir(), `cue-todo-${Date.now()}.md`)
+    try {
+      await Bun.write(tempPath, args.content)
+
+      const frontmatter = {
         status: args.status ?? "open",
         priority: args.priority ?? "normal",
-      },
-    }, context)
+      }
+      const frontmatterFlags = Object.entries(frontmatter).flatMap(([k, v]) => ["--frontmatter", `${k}=${v}`])
+
+      const output = await Bun.$`cue add --type todo ${frontmatterFlags} --file ${tempPath} ${args.filename}`
+        .cwd(context.directory)
+        .text()
+
+      return output.trim()
+    } finally {
+      const file = Bun.file(tempPath)
+      if (await file.exists()) {
+        await Bun.$`rm ${tempPath}`.quiet()
+      }
+    }
   },
 })
 
-const CueTodoPlugin: Plugin = async () => {
+export const CueTodoPlugin: Plugin = async () => {
   return {
     tool: {
       "cue-todo": cueTodoTool,
     },
   }
 }
-
-export default CueTodoPlugin

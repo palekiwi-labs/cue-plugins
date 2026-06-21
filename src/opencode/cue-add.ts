@@ -2,7 +2,7 @@ import { type Plugin, tool } from "@opencode-ai/plugin"
 import { join } from "node:path"
 import { tmpdir } from "node:os"
 
-export const cueAddTool = tool({
+const cueAddTool = tool({
   description: "Create a new cue artifact (spec, doc, trace, etc.).",
   args: {
     type: tool.schema.string().default("spec").describe(
@@ -23,7 +23,7 @@ export const cueAddTool = tool({
       "Save artifact to a specific branch instead of current"
     ),
   },
-  async execute(args) {
+  async execute(args, context) {
     const tempPath = join(tmpdir(), `cue-add-${Date.now()}.md`)
     try {
       // 1. Write content directly to a temporary file (Safe, no shell involved)
@@ -36,7 +36,9 @@ export const cueAddTool = tool({
         ? Object.entries(args.frontmatter).flatMap(([k, v]) => ["--frontmatter", `${k}=${v}`])
         : []
 
-      const output = await Bun.$`cue add --type ${args.type} ${rootFlag} ${branchFlag} ${frontmatterFlags} --file ${tempPath} ${args.filename}`.text()
+      const output = await Bun.$`cue add --type ${args.type} ${rootFlag} ${branchFlag} ${frontmatterFlags} --file ${tempPath} ${args.filename}`
+        .cwd(context.directory)
+        .text()
 
       return output.trim()
     } finally {
@@ -49,12 +51,10 @@ export const cueAddTool = tool({
   },
 })
 
-const CueAddPlugin: Plugin = async () => {
+export const CueAddPlugin: Plugin = async () => {
   return {
     tool: {
       "cue-add": cueAddTool,
     },
   }
 }
-
-export default CueAddPlugin

@@ -1,7 +1,8 @@
 import { type Plugin, tool } from "@opencode-ai/plugin"
-import { cueAddTool } from "./cue-add"
+import { join } from "node:path"
+import { tmpdir } from "node:os"
 
-export const cueTaskTool = tool({
+const cueTaskTool = tool({
   description: "Create a new task artifact (kanban board card). Always saved to the master branch.",
   args: {
     filename: tool.schema.string().describe("Slug-based name (e.g., 'auth-login.md'). No numeric ID."),
@@ -15,27 +16,35 @@ export const cueTaskTool = tool({
     ),
   },
   async execute(args, context) {
-    return await cueAddTool.execute({
-      type: "task",
-      filename: args.filename,
-      content: args.content,
-      branch: "master",
-      root: false,
-      frontmatter: {
+    const tempPath = join(tmpdir(), `cue-task-${Date.now()}.md`)
+    try {
+      await Bun.write(tempPath, args.content)
+
+      const frontmatter = {
         title: args.title,
         status: args.status ?? "open",
         priority: args.priority ?? "normal",
-      },
-    }, context)
+      }
+      const frontmatterFlags = Object.entries(frontmatter).flatMap(([k, v]) => ["--frontmatter", `${k}=${v}`])
+
+      const output = await Bun.$`cue add --type task --branch master ${frontmatterFlags} --file ${tempPath} ${args.filename}`
+        .cwd(context.directory)
+        .text()
+
+      return output.trim()
+    } finally {
+      const file = Bun.file(tempPath)
+      if (await file.exists()) {
+        await Bun.$`rm ${tempPath}`.quiet()
+      }
+    }
   },
 })
 
-const CueTaskPlugin: Plugin = async () => {
+export const CueTaskPlugin: Plugin = async () => {
   return {
     tool: {
       "cue-task": cueTaskTool,
     },
   }
 }
-
-export default CueTaskPlugin

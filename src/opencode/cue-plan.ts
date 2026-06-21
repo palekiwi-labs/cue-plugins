@@ -1,7 +1,8 @@
 import { type Plugin, tool } from "@opencode-ai/plugin"
-import { cueAddTool } from "./cue-add"
+import { join } from "node:path"
+import { tmpdir } from "node:os"
 
-export const cuePlanTool = tool({
+const cuePlanTool = tool({
   description: "Create a new plan artifact.",
   args: {
     filename: tool.schema.string().describe("Name of the file (e.g., 'slice1.md')"),
@@ -15,24 +16,34 @@ export const cuePlanTool = tool({
     ),
   },
   async execute(args, context) {
-    return await cueAddTool.execute({
-      type: "plan",
-      filename: args.filename,
-      content: args.content,
-      root: args.root,
-      frontmatter: {
+    const tempPath = join(tmpdir(), `cue-plan-${Date.now()}.md`)
+    try {
+      await Bun.write(tempPath, args.content)
+
+      const rootFlag = args.root ? ["--root"] : []
+      const frontmatter = {
         status: args.status ?? "open",
-      },
-    }, context)
+      }
+      const frontmatterFlags = Object.entries(frontmatter).flatMap(([k, v]) => ["--frontmatter", `${k}=${v}`])
+
+      const output = await Bun.$`cue add --type plan ${rootFlag} ${frontmatterFlags} --file ${tempPath} ${args.filename}`
+        .cwd(context.directory)
+        .text()
+
+      return output.trim()
+    } finally {
+      const file = Bun.file(tempPath)
+      if (await file.exists()) {
+        await Bun.$`rm ${tempPath}`.quiet()
+      }
+    }
   },
 })
 
-const CuePlanPlugin: Plugin = async () => {
+export const CuePlanPlugin: Plugin = async () => {
   return {
     tool: {
       "cue-plan": cuePlanTool,
     },
   }
 }
-
-export default CuePlanPlugin
