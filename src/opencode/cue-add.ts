@@ -22,6 +22,10 @@ const cueAddTool = tool({
     branch: tool.schema.string().optional().describe(
       "Save artifact to a specific branch instead of current"
     ),
+    dir: tool.schema.string().optional().describe(
+      "Run cue as if started in this directory instead of the session directory. " +
+      "Mirrors the git -C convention; use to operate on another project's .cue/ directory."
+    ),
   },
   async execute(args, context) {
     const tempPath = join(tmpdir(), `cue-add-${Date.now()}.md`)
@@ -30,13 +34,14 @@ const cueAddTool = tool({
       await Bun.write(tempPath, args.content)
 
       // 2. Tell cue to read from that file (Safe, content is not a CLI arg)
+      const dirFlag = args.dir ? ["--dir", args.dir] : []
       const rootFlag = args.root ? ["--root"] : []
       const branchFlag = args.branch ? ["--branch", args.branch] : []
       const frontmatterFlags = args.frontmatter
         ? Object.entries(args.frontmatter).flatMap(([k, v]) => ["--frontmatter", `${k}=${v}`])
         : []
 
-      const output = await Bun.$`cue add --type ${args.type} ${rootFlag} ${branchFlag} ${frontmatterFlags} --file ${tempPath} ${args.filename}`
+      const output = await Bun.$`cue add ${dirFlag} --type ${args.type} ${rootFlag} ${branchFlag} ${frontmatterFlags} --file ${tempPath} ${args.filename}`
         .cwd(context.directory)
         .text()
 

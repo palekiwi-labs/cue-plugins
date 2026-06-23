@@ -14,19 +14,24 @@ const cuePlanTool = tool({
     status: tool.schema.enum(["open", "in-progress", "complete", "closed"]).optional().default("open").describe(
       "Status of the plan"
     ),
+    dir: tool.schema.string().optional().describe(
+      "Run cue as if started in this directory instead of the session directory. " +
+      "Mirrors the git -C convention; use to operate on another project's .cue/ directory."
+    ),
   },
   async execute(args, context) {
     const tempPath = join(tmpdir(), `cue-plan-${Date.now()}.md`)
     try {
       await Bun.write(tempPath, args.content)
 
+      const dirFlag = args.dir ? ["--dir", args.dir] : []
       const rootFlag = args.root ? ["--root"] : []
       const frontmatter = {
         status: args.status ?? "open",
       }
       const frontmatterFlags = Object.entries(frontmatter).flatMap(([k, v]) => ["--frontmatter", `${k}=${v}`])
 
-      const output = await Bun.$`cue add --type plan ${rootFlag} ${frontmatterFlags} --file ${tempPath} ${args.filename}`
+      const output = await Bun.$`cue add ${dirFlag} --type plan ${rootFlag} ${frontmatterFlags} --file ${tempPath} ${args.filename}`
         .cwd(context.directory)
         .text()
 

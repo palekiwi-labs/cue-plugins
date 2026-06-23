@@ -14,12 +14,17 @@ const cueTaskTool = tool({
     priority: tool.schema.enum(["critical", "high", "normal", "low"]).optional().default("normal").describe(
       "Priority of the task"
     ),
+    dir: tool.schema.string().optional().describe(
+      "Run cue as if started in this directory instead of the session directory. " +
+      "Mirrors the git -C convention; use to operate on another project's .cue/ directory."
+    ),
   },
   async execute(args, context) {
     const tempPath = join(tmpdir(), `cue-task-${Date.now()}.md`)
     try {
       await Bun.write(tempPath, args.content)
 
+      const dirFlag = args.dir ? ["--dir", args.dir] : []
       const frontmatter = {
         title: args.title,
         status: args.status ?? "open",
@@ -27,7 +32,7 @@ const cueTaskTool = tool({
       }
       const frontmatterFlags = Object.entries(frontmatter).flatMap(([k, v]) => ["--frontmatter", `${k}=${v}`])
 
-      const output = await Bun.$`cue add --type task --branch master ${frontmatterFlags} --file ${tempPath} ${args.filename}`
+      const output = await Bun.$`cue add ${dirFlag} --type task --branch master ${frontmatterFlags} --file ${tempPath} ${args.filename}`
         .cwd(context.directory)
         .text()
 

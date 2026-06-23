@@ -10,6 +10,10 @@ const cueLogTool = tool({
     found: tool.schema.array(tool.schema.string()).optional().describe("Findings discovered"),
     decided: tool.schema.array(tool.schema.string()).optional().describe("Decisions made"),
     open: tool.schema.array(tool.schema.string()).optional().describe("Remaining questions"),
+    dir: tool.schema.string().optional().describe(
+      "Run cue as if started in this directory instead of the session directory. " +
+      "Mirrors the git -C convention; use to operate on another project's .cue/ directory."
+    ),
   },
   async execute(args, context) {
     const tempPath = join(tmpdir(), `cue-log-${Date.now()}.json`)
@@ -25,7 +29,8 @@ const cueLogTool = tool({
 
     try {
       await Bun.write(tempPath, JSON.stringify(payload))
-      await Bun.$`cue log add --file ${tempPath}`.cwd(context.directory).quiet()
+      const dirFlag = args.dir ? ["--dir", args.dir] : []
+      await Bun.$`cue log add ${dirFlag} --file ${tempPath}`.cwd(context.directory).quiet()
       return `Logged milestone: ${args.title}`
     } finally {
       // Clean up the temporary file
