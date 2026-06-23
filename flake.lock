@@ -11,17 +11,17 @@
         ]
       },
       "locked": {
-        "lastModified": 1782204423,
+        "lastModified": 1782209522,
         "narHash": "sha256-1oTKO6qkMaQHMIrie+dC0crQcstC+X11iV3mGnlxY6Y=",
-        "ref": "refs/heads/feat/cue-plugins-full-emitter",
-        "rev": "860d792ed02a047e92f42e055acf4d31b0f2d100",
-        "revCount": 179,
-        "type": "git",
-        "url": "file:///home/pl/code/palekiwi-labs/cue"
+        "owner": "palekiwi-labs",
+        "repo": "cue",
+        "rev": "8330d03cb93269dd0e527dfb68d6a6e84bf810fe",
+        "type": "github"
       },
       "original": {
-        "type": "git",
-        "url": "file:///home/pl/code/palekiwi-labs/cue"
+        "owner": "palekiwi-labs",
+        "repo": "cue",
+        "type": "github"
       }
     },
     "fenix": {

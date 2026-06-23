@@ -4,10 +4,8 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
-    # TODO(post-merge): switch to github:palekiwi-labs/cue once
-    # feat/cue-plugins-full-emitter lands on master.
     cue = {
-      url = "git+file:///home/pl/code/palekiwi-labs/cue";
+      url = "github:palekiwi-labs/cue";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.flake-utils.follows = "flake-utils";
     };
