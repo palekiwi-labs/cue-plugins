@@ -38,4 +38,11 @@ Add the following to your `opencode.json` configuration file (replace `<your-use
 - **cue-plan**: Create technical plans and executive slices.
 - **cue-task**: Manage kanban tasks on the master branch.
 - **cue-todo**: Capture informal deferred notes.
-- **acuity-plugin**: Integration with the Acuity service.
+- **acuity-plugin**: Forwards agent lifecycle events (session idle, agent
+  turns, tool calls) to an [acuity](https://github.com/palekiwi-labs/cue/blob/master/docs/acuity.md)
+  observability server. Acuity is the ingestion component of the cue
+  ecosystem — an HTTP server that persists events to SQLite and optionally
+  forwards notifications to Gotify. The plugin connects to
+  `http://localhost:33222` by default; override with the `ACUITY_HOST`
+  environment variable. See the [acuity documentation](https://github.com/palekiwi-labs/cue/blob/master/docs/acuity.md)
+  for server setup and configuration.
