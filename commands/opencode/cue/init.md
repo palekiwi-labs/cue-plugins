@@ -4,7 +4,7 @@ description: Get a quick summary of project state
 
 PWD: !`pwd`
 
-!`$HOME/.config/opencode/plugin/palekiwi-labs/cue-plugins/commands/scripts/git-context.sh`
+!`$HOME/.config/opencode/scripts/git-context.sh`
 !`cue context render --profile default 2>/dev/null`
 
 Load the `cue` skill.
