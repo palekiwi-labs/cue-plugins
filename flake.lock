@@ -1,5 +1,51 @@
 {
   "nodes": {
+    "cue": {
+      "inputs": {
+        "fenix": "fenix",
+        "flake-utils": [
+          "flake-utils"
+        ],
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1782204423,
+        "narHash": "sha256-1oTKO6qkMaQHMIrie+dC0crQcstC+X11iV3mGnlxY6Y=",
+        "ref": "refs/heads/feat/cue-plugins-full-emitter",
+        "rev": "860d792ed02a047e92f42e055acf4d31b0f2d100",
+        "revCount": 179,
+        "type": "git",
+        "url": "file:///home/pl/code/palekiwi-labs/cue"
+      },
+      "original": {
+        "type": "git",
+        "url": "file:///home/pl/code/palekiwi-labs/cue"
+      }
+    },
+    "fenix": {
+      "inputs": {
+        "nixpkgs": [
+          "cue",
+          "nixpkgs"
+        ],
+        "rust-analyzer-src": "rust-analyzer-src"
+      },
+      "locked": {
+        "lastModified": 1781527054,
+        "narHash": "sha256-1fX9ev2Fh5QoKQ41G9dYutjo5j/jywu6tZse5Eb1Ck4=",
+        "owner": "nix-community",
+        "repo": "fenix",
+        "rev": "8c2e51dffefc040a21975da7abf6f252c8c9b783",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nix-community",
+        "repo": "fenix",
+        "type": "github"
+      }
+    },
     "flake-utils": {
       "inputs": {
         "systems": "systems"
@@ -36,8 +82,26 @@
     },
     "root": {
       "inputs": {
+        "cue": "cue",
         "flake-utils": "flake-utils",
         "nixpkgs": "nixpkgs"
+      }
+    },
+    "rust-analyzer-src": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1781453968,
+        "narHash": "sha256-+V3nK4pCngbmgyVGXY6Kkrlevp4ocPkJJLf2aqwkDNA=",
+        "owner": "rust-lang",
+        "repo": "rust-analyzer",
+        "rev": "cc272809a173c2c11d0e479d639c811c1eacf049",
+        "type": "github"
+      },
+      "original": {
+        "owner": "rust-lang",
+        "ref": "nightly",
+        "repo": "rust-analyzer",
+        "type": "github"
       }
     },
     "systems": {
