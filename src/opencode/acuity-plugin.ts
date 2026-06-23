@@ -29,16 +29,25 @@ async function postEvent(
   event: AcuityEvent,
   log: (msg: string, extra?: Record<string, unknown>) => void,
 ): Promise<void> {
-  await fetch(`${ACUITY_HOST}/events`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-Acuity-Schema": "1",
-    },
-    body: JSON.stringify(event),
-  }).catch((err: unknown) => {
+  try {
+    const res = await fetch(`${ACUITY_HOST}/events`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Acuity-Schema": "1",
+      },
+      body: JSON.stringify(event),
+    });
+    if (!res.ok) {
+      log("acuity rejected event", {
+        status: res.status,
+        status_text: res.statusText,
+        type: event.type,
+      });
+    }
+  } catch (err: unknown) {
     log("failed to post event", { error: String(err), type: event.type });
-  });
+  }
 }
 
 function makeLog(client: Parameters<Plugin>[0]["client"]) {
