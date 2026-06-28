@@ -4,6 +4,7 @@ import type {
   AcuityEvent,
   AgentTurnCompleted,
   SessionIdle,
+  SessionUpdated,
   ToolCallCompleted,
   ToolCallRequested,
 } from "../generated/acuity/types";
@@ -67,6 +68,37 @@ const plugin: Plugin = async ({ client, directory }) => {
 
   return {
     event: async ({ event }: { event: Event }) => {
+      // --- session.created / session.updated (SessionUpdated) ---
+      // Carries lineage + display metadata: parentID, agent, model, title.
+      // opencode regenerates the title shortly after the first prompt via
+      // ensureTitle, so session.updated delivers the real title early
+      // (before idle). Both events share the same `properties.info: Session`.
+      if (
+        event.type === "session.created" ||
+        event.type === "session.updated"
+      ) {
+        const info = event.properties.info;
+        // The V1 SDK Session type declares parentID/title but omits
+        // agent/model even though the runtime object carries them — access
+        // defensively via typed casts rather than relying on the SDK type.
+        const modelObj = (info as { model?: unknown }).model as
+          | { providerID?: string; modelID?: string }
+          | undefined;
+        const payload: SessionUpdated = {
+          session_id: info.id,
+          project_dir: directory,
+          harness: "opencode",
+          parent_id: info.parentID ?? null,
+          agent: (info as { agent?: string }).agent ?? null,
+          model: modelObj?.providerID && modelObj?.modelID
+            ? `${modelObj.providerID}/${modelObj.modelID}`
+            : null,
+          title: info.title || null,
+        };
+        await postEvent({ type: "session_updated", ...payload }, log);
+        return;
+      }
+
       // --- session.idle ---
       if (event.type === "session.idle") {
         const sessionID = event.properties.sessionID;

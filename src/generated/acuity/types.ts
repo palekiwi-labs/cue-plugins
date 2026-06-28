@@ -11,7 +11,7 @@ import type { JsonValue } from "./serde_json/JsonValue";
  * of the plugin schema without requiring a server redeploy. Do **not** add
  * `#[serde(deny_unknown_fields)]` here.
  */
-export type AcuityEvent = { "type": "session_idle" } & SessionIdle | { "type": "agent_turn_completed" } & AgentTurnCompleted | { "type": "tool_call_requested" } & ToolCallRequested | { "type": "tool_call_completed" } & ToolCallCompleted;
+export type AcuityEvent = { "type": "session_idle" } & SessionIdle | { "type": "agent_turn_completed" } & AgentTurnCompleted | { "type": "tool_call_requested" } & ToolCallRequested | { "type": "tool_call_completed" } & ToolCallCompleted | { "type": "session_updated" } & SessionUpdated;
 
 /**
  * Emitted when an agent turn (LLM inference + tool calls) completes.
@@ -23,6 +23,32 @@ export type AgentTurnCompleted = { session_id: string, turn_id: string, project_
  * Emitted by the acuity opencode plugin and consumed by the acuity server.
  */
 export type SessionIdle = { session_id: string, project_dir: string, harness: string, session_title: string | null, };
+
+/**
+ * Emitted on `session.created` / `session.updated` to carry session lineage
+ * and display metadata: `parent_id` (the spawning session, for sub-agents),
+ * `agent`, `model`, and `title`. Like every variant it carries the
+ * `project_dir` / `harness` envelope so the enum accessors stay exhaustive
+ * and `insert_event`'s NOT NULL column binds remain valid.
+ */
+export type SessionUpdated = { session_id: string, project_dir: string, harness: string, 
+/**
+ * The session that spawned this one (sub-agent back-edge). `None` for
+ * primary sessions. Set-once-if-some in the curator summary.
+ */
+parent_id: string | null, 
+/**
+ * Agent identifier, e.g. `"claude"`. Last-writer-wins in the summary.
+ */
+agent: string | null, 
+/**
+ * Flat `"providerID/modelID"` string. Last-writer-wins in the summary.
+ */
+model: string | null, 
+/**
+ * Human-readable session title. Last-writer-wins in the summary.
+ */
+title: string | null, };
 
 /**
  * Emitted when a tool call returns a result (or error).
