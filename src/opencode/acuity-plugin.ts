@@ -77,6 +77,7 @@ const plugin: Plugin = async ({ client, directory }) => {
         const payload: SessionIdle = {
           session_id: sessionID,
           project_dir: directory,
+          harness: "opencode",
           session_title: session?.title ?? null,
         };
         await postEvent({ type: "session_idle", ...payload }, log);
@@ -96,6 +97,8 @@ const plugin: Plugin = async ({ client, directory }) => {
         const payload: AgentTurnCompleted = {
           session_id: info.sessionID,
           turn_id: info.id,
+          project_dir: directory,
+          harness: "opencode",
           input_tokens: info.tokens?.input ?? null,
           output_tokens: info.tokens?.output ?? null,
         };
@@ -123,6 +126,8 @@ const plugin: Plugin = async ({ client, directory }) => {
           const payload: ToolCallRequested = {
             session_id: sessionID,
             turn_id: messageID,
+            project_dir: directory,
+            harness: "opencode",
             tool_call_id: callID,
             tool_name: part.tool,
             args: part.state.input as JsonValue,
@@ -140,6 +145,8 @@ const plugin: Plugin = async ({ client, directory }) => {
           const payload: ToolCallCompleted = {
             session_id: sessionID,
             turn_id: messageID,
+            project_dir: directory,
+            harness: "opencode",
             tool_call_id: callID,
             tool_name: part.tool,
             is_error: part.state.status === "error",
