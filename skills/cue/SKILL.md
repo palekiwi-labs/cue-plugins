@@ -10,7 +10,7 @@ using the `cue` CLI tool and a dedicated `.cue/` directory structure.
 
 ## Core Philosophy
 
-The system is organized around four altitudes:
+The system is organized around five altitudes:
 
 - **WHY** — `spec/`: stable, human-authored project intent. Defines what should be true.
   Does not move. Tasks point up at it.
@@ -20,6 +20,9 @@ The system is organized around four altitudes:
   with `[ ]` progress checkboxes.
 - **DEFER** — `todo/`: informal notes capturing out-of-scope discoveries so they are not
   lost. Optional feeder for `task` artifacts.
+- **THINK** — `note/`: spontaneous idea capture and conversation anchors. Thoughts that
+  arise outside active work, waiting to be examined. Dissolves into its outcome artifact
+  (task, spec, doc) once addressed, then is `closed`.
 
 ## Frontmatter Management
 
@@ -296,6 +299,66 @@ mark the `todo` `closed`.
 
 **Create with:** `cue-todo(filename: "review-items.md", content: "# ...")`
 
+## The `note` Artifact Type
+
+`note` artifacts capture spontaneous ideas and conversation anchors — thoughts
+that arise outside active work and require immediate persistence or they may
+evaporate. A note is exploratory, not action-oriented: it exists to be examined
+via discussion, research, or brainstorming. Once addressed, the note's content
+takes shape as a new artifact (`task`, `spec`, `doc`, `todo`) and the note is
+`closed`. A note does not `complete` — it *dissolves* into its outcome.
+
+### Structure & Frontmatter
+
+Every `note` artifact must begin with YAML frontmatter:
+
+```yaml
+---
+status: open # open | in-progress | closed
+---
+```
+
+Notes have **no `priority`** field. Ideas are not urgent; they require
+persistence, not ranking.
+
+Valid statuses for notes are:
+
+- `open`: captured, not yet addressed.
+- `in-progress`: actively being discussed, researched, or analyzed.
+- `closed`: the conversation concluded; the outcome now lives in a different
+  artifact. The note itself is deletable.
+
+There is deliberately **no `complete` status**. A note does not finish — it is
+addressed (discussed, analyzed, researched) and its valuable content migrates
+to a more appropriate artifact. At that point the note is `closed`.
+
+### Usage
+
+Use `note` for:
+
+- Feature ideas or improvements that arise spontaneously
+- Design questions worth a conversation
+- Research topics to investigate later
+- Architectural thoughts that need examination before becoming specs or tasks
+- Conversation threads between human and agent (a note is an anchor point for
+  further exchange of opinions, like a forum thread)
+
+A `note` is distinct from a `todo`:
+- `todo` is **action-oriented**: "I discovered work that needs doing eventually."
+- `note` is **exploration-oriented**: "I had a thought that needs examining."
+
+If a `note` is addressed and the outcome warrants tracked work, create the
+appropriate artifact (`task`, `spec`, `doc`) and mark the `note` `closed`. The
+note itself has no further value once its content has migrated.
+
+### Branch Placement
+
+A `note` defaults to the current branch if triggered by current work, or to
+`master` if the idea is project-global. Use the `branch` parameter to control
+placement explicitly.
+
+**Create with:** `cue-note(filename: "idea-auth.md", content: "# ...")`
+
 ## Managing Artifacts (cue-add & edit)
 
 Artifacts within the `.cue/` directory must be created using the `cue-add` tool. However, if the file
@@ -316,17 +379,21 @@ manual file-writing tools (like `write` or `bash echo`) to create files inside `
   point-in-time (default, no `--root`).
 - **`todo/` artifacts**: Always point-in-time (never use `--root`). Represent
   informal deferred notes, not primary work items. Use `task` for tracked work.
+- **`note/` artifacts**: Always point-in-time (never use `--root`). Represent
+  spontaneous ideas and conversation anchors, not work items or discoveries.
+  Once addressed, the outcome migrates to a `task`, `spec`, or `doc` and the
+  note is `closed`.
 - **`trace/` vs `tmp/`**:
   - Use `type: "trace"` for information that should be preserved (error logs, analysis, review output).
     Always point-in-time (default).
   - Use `type: "tmp"` for disposable ephemeral data relevant only to the current sub-task.
     Always point-in-time (default).
 
-### The `cue-add`, `cue-plan`, `cue-task`, and `cue-todo` Tools
+### The `cue-add`, `cue-plan`, `cue-task`, `cue-todo`, and `cue-note` Tools
 
 Use the `cue-add` tool to create generic artifacts, or use the specialized
-`cue-plan`, `cue-task`, and `cue-todo` tools for plans, tasks, and todos.
-These tools handle content safely without shell escaping issues.
+`cue-plan`, `cue-task`, `cue-todo`, and `cue-note` tools for plans, tasks,
+todos, and notes. These tools handle content safely without shell escaping issues.
 
 #### `cue-plan`
 
@@ -366,9 +433,23 @@ the `status` and `priority` frontmatter.
 - `status` (optional): `open | in-progress | complete | closed`. Default is `open`.
 - `priority` (optional): `critical | high | normal | low`. Default is `normal`.
 
+#### `cue-note`
+
+Use `cue-note` to capture spontaneous ideas and conversation anchors. It
+automatically sets the `status` frontmatter. Notes have no `priority`.
+
+**Arguments:**
+
+- `filename`: The name of the file (e.g., `idea-auth.md`).
+- `content`: Full content of the note.
+- `status` (optional): `open | in-progress | closed`. Default is `open`.
+  Note: there is no `complete` status — notes dissolve into their outcome,
+  they do not complete.
+- `branch` (optional): Write note to a specific branch instead of current.
+
 #### `cue-add`
 
-- `type`: The artifact type. Standard types: `spec`, `plan`, `task`, `todo`, `trace`, `tmp`, `ref`, `bin`, `doc`.
+- `type`: The artifact type. Standard types: `spec`, `plan`, `task`, `todo`, `note`, `trace`, `tmp`, `ref`, `bin`, `doc`.
   Custom types may be configured in `cue.json`.
 - `filename`: The name of the file (e.g., `slice1.md`, `research-auth.md`).
 - `content`: The full content to write to the file.
@@ -383,6 +464,7 @@ the `status` and `priority` frontmatter.
 - **Create executive plan**: `cue-plan(filename: "phase-1.md", content: "...")`
 - **Create a task (board card)**: `cue-task(filename: "auth-login.md", title: "Implement login", content: "...")`
 - **Create a deferred note**: `cue-todo(filename: "review-items.md", content: "...")`
+- **Create a spontaneous idea**: `cue-note(filename: "idea-auth.md", content: "...")`
 - **Save a trace**: `cue-add(type: "trace", filename: "build-error.log", content: "...")`
 - **Save a research report**: `cue-add(type: "doc", filename: "research-auth-flow.md", content: "...")`
 - **Add a reference**: `cue-add(type: "ref", filename: "documentation.md", root: true, content: "...")`
@@ -394,7 +476,7 @@ the `status` and `priority` frontmatter.
 cue list [FLAGS]
 ```
 
-- **`--type <type>`**: Filters artifacts by category (e.g., `spec`, `plan`, `task`, `todo`, `trace`).
+- **`--type <type>`**: Filters artifacts by category (e.g., `spec`, `plan`, `task`, `todo`, `note`, `trace`).
 - **`--all`, `-a`**: Lists artifacts across all branches.
 - **`--branch <branch>`**: Lists artifacts for a specific branch.
 - **`--json`, `-j`**: Outputs results in JSON format.
@@ -438,9 +520,10 @@ To ensure consistency and quality across sessions, follow these execution princi
 - **Ambiguity & Clarification**: If any instruction is ambiguous or if you are in doubt about the
   intended behavior, ask the user for clarification immediately. Do not make assumptions.
 - **Out-of-Scope Discoveries**: When you notice a problem or opportunity unrelated
-  to the current task, do NOT fix it. Create a `todo` artifact to capture it for
-  later. If it warrants tracked work on the board, create a `task` on master and
-  mark the `todo` `closed`.
+  to the current task, do NOT fix it. Capture it for later: use a `todo` for
+  out-of-scope work items (refactors, debt, review items) or a `note` for
+  spontaneous ideas and thoughts worth examining. If either warrants tracked
+  work on the board, create a `task` on master and mark the origin `closed`.
 
 ### No Automated Commits to .cue/
 
