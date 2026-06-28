@@ -357,7 +357,28 @@ A `note` defaults to the current branch if triggered by current work, or to
 `master` if the idea is project-global. Use the `branch` parameter to control
 placement explicitly.
 
+### Storage: root-level by default
+
+Notes are stored at **root level** (flat), not nested under
+`<timestamp>-<hash>` directories. The nesting model serves generated artifacts
+where collision protection and commit anchoring matter; neither applies to
+authored documents with meaningful filenames.
+
+This enables subdirectory grouping — a note can grow into a thread by
+organizing related files under a named directory:
+
+```
+.cue/master/note/auth-redesign/index.md
+.cue/master/note/auth-redesign/references.md
+.cue/master/note/auth-redesign/follow-up.md
+```
+
+A note can start as a single flat file (`note/my-idea.md`) and organically
+grow into a directory thread when the conversation develops. The `filename`
+parameter of `cue-note` accepts subdirectory paths for this purpose.
+
 **Create with:** `cue-note(filename: "idea-auth.md", content: "# ...")`
+**Grouped:** `cue-note(filename: "auth-redesign/index.md", content: "# ...")`
 
 ## Managing Artifacts (cue-add & edit)
 
@@ -379,10 +400,11 @@ manual file-writing tools (like `write` or `bash echo`) to create files inside `
   point-in-time (default, no `--root`).
 - **`todo/` artifacts**: Always point-in-time (never use `--root`). Represent
   informal deferred notes, not primary work items. Use `task` for tracked work.
-- **`note/` artifacts**: Always point-in-time (never use `--root`). Represent
-  spontaneous ideas and conversation anchors, not work items or discoveries.
-  Once addressed, the outcome migrates to a `task`, `spec`, or `doc` and the
-  note is `closed`.
+- **`note/` artifacts**: Root-level by default (not nested under
+  `<timestamp>-<hash>`). Represent spontaneous ideas and conversation anchors,
+  not work items or discoveries. Supports subdirectory grouping for note
+  threads. Once addressed, the outcome migrates to a `task`, `spec`, or `doc`
+  and the note is `closed`.
 - **`trace/` vs `tmp/`**:
   - Use `type: "trace"` for information that should be preserved (error logs, analysis, review output).
     Always point-in-time (default).
@@ -435,12 +457,15 @@ the `status` and `priority` frontmatter.
 
 #### `cue-note`
 
-Use `cue-note` to capture spontaneous ideas and conversation anchors. It
-automatically sets the `status` frontmatter. Notes have no `priority`.
+Use `cue-note` to capture spontaneous ideas and conversation anchors. Notes
+are root-level by default (not nested under `<timestamp>-<hash>`), which
+enables subdirectory grouping for note threads. Notes have no `priority`.
 
 **Arguments:**
 
-- `filename`: The name of the file (e.g., `idea-auth.md`).
+- `filename`: The name of the file (e.g., `idea-auth.md`). May include a
+  subdirectory to group related notes into a thread (e.g.,
+  `auth-redesign/index.md`).
 - `content`: Full content of the note.
 - `status` (optional): `open | in-progress | closed`. Default is `open`.
   Note: there is no `complete` status — notes dissolve into their outcome,

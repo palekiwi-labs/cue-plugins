@@ -5,7 +5,11 @@ import { tmpdir } from "node:os"
 const cueNoteTool = tool({
   description: "Create a new note artifact.",
   args: {
-    filename: tool.schema.string().describe("Name of the file (e.g., 'idea-auth.md')"),
+    filename: tool.schema.string().describe(
+      "Name of the file (e.g., 'idea-auth.md'). " +
+      "May include a subdirectory to group related notes into a thread " +
+      "(e.g., 'auth-redesign/index.md', 'auth-redesign/references.md')"
+    ),
     content: tool.schema.string().describe("Full content of the note"),
     status: tool.schema.enum(["open", "in-progress", "closed"]).optional().default("open").describe(
       "Status of the note"
@@ -30,7 +34,9 @@ const cueNoteTool = tool({
       }
       const frontmatterFlags = Object.entries(frontmatter).flatMap(([k, v]) => ["--frontmatter", `${k}=${v}`])
 
-      const output = await Bun.$`cue add ${dirFlag} ${branchFlag} --type note ${frontmatterFlags} --file ${tempPath} ${args.filename}`
+      // Notes are root-level by default: nesting under <ts>-<hash> provides no
+      // value for authored documents and prevents subdirectory organization.
+      const output = await Bun.$`cue add ${dirFlag} ${branchFlag} --type note --root ${frontmatterFlags} --file ${tempPath} ${args.filename}`
         .cwd(context.directory)
         .text()
 
