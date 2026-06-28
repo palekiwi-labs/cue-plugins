@@ -16,13 +16,13 @@ export type AcuityEvent = { "type": "session_idle" } & SessionIdle | { "type": "
 /**
  * Emitted when an agent turn (LLM inference + tool calls) completes.
  */
-export type AgentTurnCompleted = { session_id: string, turn_id: string, input_tokens: number | null, output_tokens: number | null, };
+export type AgentTurnCompleted = { session_id: string, turn_id: string, project_dir: string, harness: string, input_tokens: number | null, output_tokens: number | null, };
 
 /**
  * Represents an opencode session that has gone idle.
  * Emitted by the acuity opencode plugin and consumed by the acuity server.
  */
-export type SessionIdle = { session_id: string, project_dir: string, session_title: string | null, };
+export type SessionIdle = { session_id: string, project_dir: string, harness: string, session_title: string | null, };
 
 /**
  * Emitted when a tool call returns a result (or error).
@@ -33,12 +33,12 @@ export type SessionIdle = { session_id: string, project_dir: string, session_tit
  * read `payload` directly (e.g. via SQLite JSON functions). Duplicating it
  * here would bloat the schema type and the in-memory representation.
  */
-export type ToolCallCompleted = { session_id: string, turn_id: string, tool_call_id: string, tool_name: string, is_error: boolean, error_text: string | null, };
+export type ToolCallCompleted = { session_id: string, turn_id: string, project_dir: string, harness: string, tool_call_id: string, tool_name: string, is_error: boolean, error_text: string | null, };
 
 /**
  * Emitted when a tool call is dispatched by the agent.
  */
-export type ToolCallRequested = { session_id: string, turn_id: string, tool_call_id: string, tool_name: string, 
+export type ToolCallRequested = { session_id: string, turn_id: string, project_dir: string, harness: string, tool_call_id: string, tool_name: string, 
 /**
  * Raw tool arguments as a JSON value.
  * Use [`Value::Null`] when the tool takes no arguments.
