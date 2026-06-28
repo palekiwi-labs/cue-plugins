@@ -5,7 +5,7 @@
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
     cue = {
-      url = "github:palekiwi-labs/cue";
+      url = "github:palekiwi-labs/cue/e19cf224183ac632ebfd9fd403f58763d3a57be4";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.flake-utils.follows = "flake-utils";
     };
