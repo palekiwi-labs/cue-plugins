@@ -16,7 +16,14 @@ export type AcuityEvent = { "type": "session_idle" } & SessionIdle | { "type": "
 /**
  * Emitted when an agent turn (LLM inference + tool calls) completes.
  */
-export type AgentTurnCompleted = { session_id: string, turn_id: string, project_dir: string, harness: string, input_tokens: number | null, output_tokens: number | null, };
+export type AgentTurnCompleted = { session_id: string, turn_id: string, project_dir: string, harness: string, input_tokens: number | null, output_tokens: number | null, 
+/**
+ * Resolved model as `"providerID/modelID"`. Captured from the assistant
+ * message (`info.providerID`/`info.modelID`) in the plugin's
+ * `message.updated` handler. `None` if the plugin version predates this
+ * field (forward-compat: unknown fields are silently ignored).
+ */
+model: string | null, };
 
 /**
  * Represents an opencode session that has gone idle.

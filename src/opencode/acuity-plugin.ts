@@ -149,6 +149,7 @@ const plugin: Plugin = async ({ client, directory }) => {
           harness: "opencode",
           input_tokens: info.tokens?.input ?? null,
           output_tokens: info.tokens?.output ?? null,
+          model: `${info.providerID}/${info.modelID}`,
         };
         await postEvent(
           { type: "agent_turn_completed", ...payload },
