@@ -19,6 +19,12 @@ const dedup = new Map<
   { turns: Set<string>; calls: Set<string> }
 >();
 
+// Persistent session-event dedup: collapses identical consecutive
+// session.created/session.updated events (opencode fires several per state
+// change). Keyed by sessionID, value is a signature of the lineage metadata.
+// Deliberately NOT cleared on idle — duplicates span idle boundaries.
+const lastSessionSig = new Map<string, string>();
+
 function sessionDedup(sessionID: string) {
   if (!dedup.has(sessionID)) {
     dedup.set(sessionID, { turns: new Set(), calls: new Set() });
@@ -97,6 +103,14 @@ const plugin: Plugin = async ({ client, directory }) => {
             : null,
           title: info.title || null,
         };
+        const sig = JSON.stringify([
+          payload.parent_id,
+          payload.agent,
+          payload.model,
+          payload.title,
+        ]);
+        if (lastSessionSig.get(info.id) === sig) return;
+        lastSessionSig.set(info.id, sig);
         await postEvent({ type: "session_updated", ...payload }, log);
         return;
       }
