@@ -81,8 +81,10 @@ const plugin: Plugin = async ({ client, directory }) => {
         // The V1 SDK Session type declares parentID/title but omits
         // agent/model even though the runtime object carries them — access
         // defensively via typed casts rather than relying on the SDK type.
+        // Note: Session.model runtime shape is { id, providerID, variant? },
+        // NOT { modelID, providerID } (that shape belongs to AssistantMessage).
         const modelObj = (info as { model?: unknown }).model as
-          | { providerID?: string; modelID?: string }
+          | { providerID?: string; id?: string }
           | undefined;
         const payload: SessionUpdated = {
           session_id: info.id,
@@ -90,8 +92,8 @@ const plugin: Plugin = async ({ client, directory }) => {
           harness: "opencode",
           parent_id: info.parentID ?? null,
           agent: (info as { agent?: string }).agent ?? null,
-          model: modelObj?.providerID && modelObj?.modelID
-            ? `${modelObj.providerID}/${modelObj.modelID}`
+          model: modelObj?.providerID && modelObj?.id
+            ? `${modelObj.providerID}/${modelObj.id}`
             : null,
           title: info.title || null,
         };
