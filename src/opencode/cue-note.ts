@@ -1,6 +1,7 @@
 import { type Plugin, tool } from "@opencode-ai/plugin"
 import { join } from "node:path"
 import { tmpdir } from "node:os"
+import { frontmatterFlags } from "./frontmatter"
 
 const cueNoteTool = tool({
   description: "Create a new note artifact.",
@@ -13,6 +14,9 @@ const cueNoteTool = tool({
     content: tool.schema.string().describe("Full content of the note"),
     status: tool.schema.enum(["open", "in-progress", "closed"]).optional().default("open").describe(
       "Status of the note"
+    ),
+    refs: tool.schema.array(tool.schema.string()).default([]).describe(
+      "Artifact paths (relative to .cue/) this note links to. Emitted as a `refs:` YAML list."
     ),
     branch: tool.schema.string().optional().describe(
       "Write note to a specific branch instead of current"
@@ -29,14 +33,15 @@ const cueNoteTool = tool({
 
       const dirFlag = args.dir ? ["--dir", args.dir] : []
       const branchFlag = args.branch ? ["--branch", args.branch] : []
-      const frontmatter = {
+      const frontmatter: Record<string, string | string[]> = {
         status: args.status ?? "open",
+        refs: args.refs,
       }
-      const frontmatterFlags = Object.entries(frontmatter).flatMap(([k, v]) => ["--frontmatter", `${k}=${v}`])
+      const fmFlags = frontmatterFlags(frontmatter)
 
       // Notes are root-level by default: nesting under <ts>-<hash> provides no
       // value for authored documents and prevents subdirectory organization.
-      const output = await Bun.$`cue add ${dirFlag} ${branchFlag} --type note --root ${frontmatterFlags} --file ${tempPath} ${args.filename}`
+      const output = await Bun.$`cue add ${dirFlag} ${branchFlag} --type note --root ${fmFlags} --file ${tempPath} ${args.filename}`
         .cwd(context.directory)
         .text()
 

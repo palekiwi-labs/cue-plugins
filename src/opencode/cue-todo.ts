@@ -1,6 +1,7 @@
 import { type Plugin, tool } from "@opencode-ai/plugin"
 import { join } from "node:path"
 import { tmpdir } from "node:os"
+import { frontmatterFlags } from "./frontmatter"
 
 const cueTodoTool = tool({
   description: "Create a new todo artifact.",
@@ -13,6 +14,9 @@ const cueTodoTool = tool({
     priority: tool.schema.enum(["critical", "high", "normal", "low"]).optional().default("normal").describe(
       "Priority of the todo"
     ),
+    refs: tool.schema.array(tool.schema.string()).default([]).describe(
+      "Artifact paths (relative to .cue/) this todo links to. Emitted as a `refs:` YAML list."
+    ),
     dir: tool.schema.string().optional().describe(
       "Run cue as if started in this directory instead of the session directory. " +
       "Mirrors the git -C convention; use to operate on another project's .cue/ directory."
@@ -24,13 +28,14 @@ const cueTodoTool = tool({
       await Bun.write(tempPath, args.content)
 
       const dirFlag = args.dir ? ["--dir", args.dir] : []
-      const frontmatter = {
+      const frontmatter: Record<string, string | string[]> = {
         status: args.status ?? "open",
         priority: args.priority ?? "normal",
+        refs: args.refs,
       }
-      const frontmatterFlags = Object.entries(frontmatter).flatMap(([k, v]) => ["--frontmatter", `${k}=${v}`])
+      const fmFlags = frontmatterFlags(frontmatter)
 
-      const output = await Bun.$`cue add ${dirFlag} --type todo ${frontmatterFlags} --file ${tempPath} ${args.filename}`
+      const output = await Bun.$`cue add ${dirFlag} --type todo ${fmFlags} --file ${tempPath} ${args.filename}`
         .cwd(context.directory)
         .text()
 
