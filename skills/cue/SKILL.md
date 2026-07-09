@@ -43,15 +43,15 @@ during "plan mode" to allow for documentation and strategy refinement without le
 
 ### References (`refs:`)
 
-Every artifact SHOULD declare the other artifacts it relates to via a `refs:`
-frontmatter field — a flat list of paths relative to `.cue/`. These links are
-what make the corpus traversable (the `acumen` graph index extracts them as
-edges). Populating `refs:` is the single most important frontmatter discipline.
+Every artifact SHOULD declare the other artifacts it directly relates to via a
+`refs:` frontmatter field — a flat list of paths relative to git root. These links
+are what make the corpus traversable. Populating `refs:` is a critically important
+frontmatter discipline.
 
 ```yaml
 refs:
-  - master/spec/index.md
-  - master/task/auth-login.md
+  - .cue/master/spec/index.md
+  - .cue/master/task/auth-login.md
 ```
 
 - Paths are relative to `.cue/` (the same form `cue list` reports).
@@ -60,7 +60,7 @@ refs:
 - The `cue-*` tools accept `refs` as an array of strings (default `[]`); a
   non-empty array is emitted as the YAML list above automatically. The generic
   `cue-add` tool accepts arrays via its `frontmatter` argument (e.g.
-  `{ refs: ["master/spec/index.md"] }`).
+  `{ refs: [".cue/master/spec/index.md"] }`).
 
 ## Directory Structure
 
@@ -179,8 +179,8 @@ Every `task` artifact must begin with YAML frontmatter:
 status: open # open | in-progress | complete | closed
 priority: normal # critical | high | normal | low
 title: "Short display title"
-refs: # paths (relative to .cue/) this task links to; see References
-  - master/spec/index.md
+refs: # paths this task links to; see References
+  - .cue/master/spec/index.md
 branch: "" # set to the working branch name when in-progress
 ---
 ```
@@ -448,7 +448,7 @@ Use `cue-plan` to create technical plans. It automatically sets the `status` fro
 - `content`: The full content of the plan.
 - `root` (optional boolean): When `true`, saves as a master plan at `plan/index.md`. Default is `false`.
 - `status` (optional): `open | complete`. Default is `open`.
-- `refs` (optional): Array of artifact paths (relative to `.cue/`) this plan links to. Default is `[]`.
+- `refs` (optional): Array of artifact paths this plan links to. Default is `[]`.
 
 #### `cue-task`
 
@@ -464,7 +464,7 @@ a caller decision — tasks always live on master.
 - `title`: Short display title for the board.
 - `status` (optional): `open | in-progress | complete | closed`. Default is `open`.
 - `priority` (optional): `critical | high | normal | low`. Default is `normal`.
-- `refs` (optional): Array of artifact paths (relative to `.cue/`) this task links to (e.g. the spec it implements). Default is `[]`.
+- `refs` (optional): Array of artifact paths this task links to (e.g. the spec it implements). Default is `[]`.
 
 #### `cue-todo`
 
@@ -477,7 +477,7 @@ the `status` and `priority` frontmatter.
 - `content`: The note description.
 - `status` (optional): `open | in-progress | complete | closed`. Default is `open`.
 - `priority` (optional): `critical | high | normal | low`. Default is `normal`.
-- `refs` (optional): Array of artifact paths (relative to `.cue/`) this todo links to. Default is `[]`.
+- `refs` (optional): Array of artifact paths this todo links to. Default is `[]`.
 
 #### `cue-note`
 
@@ -494,7 +494,7 @@ enables subdirectory grouping for note threads. Notes have no `priority`.
 - `status` (optional): `open | in-progress | closed`. Default is `open`.
   Note: there is no `complete` status — notes dissolve into their outcome,
   they do not complete.
-- `refs` (optional): Array of artifact paths (relative to `.cue/`) this note links to. Default is `[]`.
+- `refs` (optional): Array of artifact paths this note links to. Default is `[]`.
 - `branch` (optional): Write note to a specific branch instead of current.
 
 #### `cue-add`
