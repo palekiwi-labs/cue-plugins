@@ -19,6 +19,12 @@ const dedup = new Map<
   { turns: Set<string>; calls: Set<string> }
 >();
 
+// Persistent session-event dedup: collapses identical consecutive
+// session.created/session.updated events (opencode fires several per state
+// change). Keyed by sessionID, value is a signature of the lineage metadata.
+// Deliberately NOT cleared on idle — duplicates span idle boundaries.
+const lastSessionSig = new Map<string, string>();
+
 function sessionDedup(sessionID: string) {
   if (!dedup.has(sessionID)) {
     dedup.set(sessionID, { turns: new Set(), calls: new Set() });
@@ -81,8 +87,10 @@ const plugin: Plugin = async ({ client, directory }) => {
         // The V1 SDK Session type declares parentID/title but omits
         // agent/model even though the runtime object carries them — access
         // defensively via typed casts rather than relying on the SDK type.
+        // Note: Session.model runtime shape is { id, providerID, variant? },
+        // NOT { modelID, providerID } (that shape belongs to AssistantMessage).
         const modelObj = (info as { model?: unknown }).model as
-          | { providerID?: string; modelID?: string }
+          | { providerID?: string; id?: string }
           | undefined;
         const payload: SessionUpdated = {
           session_id: info.id,
@@ -90,11 +98,19 @@ const plugin: Plugin = async ({ client, directory }) => {
           harness: "opencode",
           parent_id: info.parentID ?? null,
           agent: (info as { agent?: string }).agent ?? null,
-          model: modelObj?.providerID && modelObj?.modelID
-            ? `${modelObj.providerID}/${modelObj.modelID}`
+          model: modelObj?.providerID && modelObj?.id
+            ? `${modelObj.providerID}/${modelObj.id}`
             : null,
           title: info.title || null,
         };
+        const sig = JSON.stringify([
+          payload.parent_id,
+          payload.agent,
+          payload.model,
+          payload.title,
+        ]);
+        if (lastSessionSig.get(info.id) === sig) return;
+        lastSessionSig.set(info.id, sig);
         await postEvent({ type: "session_updated", ...payload }, log);
         return;
       }
@@ -133,6 +149,7 @@ const plugin: Plugin = async ({ client, directory }) => {
           harness: "opencode",
           input_tokens: info.tokens?.input ?? null,
           output_tokens: info.tokens?.output ?? null,
+          model: `${info.providerID}/${info.modelID}`,
         };
         await postEvent(
           { type: "agent_turn_completed", ...payload },

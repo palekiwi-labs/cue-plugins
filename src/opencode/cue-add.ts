@@ -1,6 +1,7 @@
 import { type Plugin, tool } from "@opencode-ai/plugin"
 import { join } from "node:path"
 import { tmpdir } from "node:os"
+import { frontmatterFlags } from "./frontmatter"
 
 const cueAddTool = tool({
   description: "Create a new cue artifact (spec, doc, trace, etc.).",
@@ -16,8 +17,13 @@ const cueAddTool = tool({
       "Use for stable anchor documents that are updated in place. " +
       "Default is false (nested under <type>/<timestamp>-<hash>/)."
     ),
-    frontmatter: tool.schema.record(tool.schema.string(), tool.schema.string()).optional().describe(
-      "Frontmatter fields to prepend to the artifact (e.g. { status: 'open', priority: '1' })"
+    frontmatter: tool.schema.record(
+      tool.schema.string(),
+      tool.schema.union([tool.schema.string(), tool.schema.array(tool.schema.string())])
+    ).optional().describe(
+      "Frontmatter fields to prepend to the artifact (e.g. { status: 'open', priority: '1' }). " +
+      "A value may be a string or an array of strings; an array becomes a YAML list " +
+      "(e.g. { refs: ['master/spec/index.md'] })."
     ),
     branch: tool.schema.string().optional().describe(
       "Save artifact to a specific branch instead of current"
@@ -37,11 +43,9 @@ const cueAddTool = tool({
       const dirFlag = args.dir ? ["--dir", args.dir] : []
       const rootFlag = args.root ? ["--root"] : []
       const branchFlag = args.branch ? ["--branch", args.branch] : []
-      const frontmatterFlags = args.frontmatter
-        ? Object.entries(args.frontmatter).flatMap(([k, v]) => ["--frontmatter", `${k}=${v}`])
-        : []
+      const fmFlags = args.frontmatter ? frontmatterFlags(args.frontmatter) : []
 
-      const output = await Bun.$`cue add ${dirFlag} --type ${args.type} ${rootFlag} ${branchFlag} ${frontmatterFlags} --file ${tempPath} ${args.filename}`
+      const output = await Bun.$`cue add ${dirFlag} --type ${args.type} ${rootFlag} ${branchFlag} ${fmFlags} --file ${tempPath} ${args.filename}`
         .cwd(context.directory)
         .text()
 

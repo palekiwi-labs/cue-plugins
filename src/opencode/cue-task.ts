@@ -1,6 +1,7 @@
 import { type Plugin, tool } from "@opencode-ai/plugin"
 import { join } from "node:path"
 import { tmpdir } from "node:os"
+import { frontmatterFlags } from "./frontmatter"
 
 const cueTaskTool = tool({
   description: "Create a new task artifact (kanban board card). Always saved to the master branch.",
@@ -14,6 +15,10 @@ const cueTaskTool = tool({
     priority: tool.schema.enum(["critical", "high", "normal", "low"]).optional().default("normal").describe(
       "Priority of the task"
     ),
+    refs: tool.schema.array(tool.schema.string()).default([]).describe(
+      "Artifact paths (relative to .cue/) this task links to (e.g. the spec it implements). " +
+      "Emitted as a `refs:` YAML list."
+    ),
     dir: tool.schema.string().optional().describe(
       "Run cue as if started in this directory instead of the session directory. " +
       "Mirrors the git -C convention; use to operate on another project's .cue/ directory."
@@ -25,14 +30,15 @@ const cueTaskTool = tool({
       await Bun.write(tempPath, args.content)
 
       const dirFlag = args.dir ? ["--dir", args.dir] : []
-      const frontmatter = {
+      const frontmatter: Record<string, string | string[]> = {
         title: args.title,
         status: args.status ?? "open",
         priority: args.priority ?? "normal",
+        refs: args.refs,
       }
-      const frontmatterFlags = Object.entries(frontmatter).flatMap(([k, v]) => ["--frontmatter", `${k}=${v}`])
+      const fmFlags = frontmatterFlags(frontmatter)
 
-      const output = await Bun.$`cue add ${dirFlag} --type task --branch master ${frontmatterFlags} --file ${tempPath} ${args.filename}`
+      const output = await Bun.$`cue add ${dirFlag} --type task --branch master ${fmFlags} --file ${tempPath} ${args.filename}`
         .cwd(context.directory)
         .text()
 
