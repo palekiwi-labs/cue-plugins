@@ -54,7 +54,7 @@ refs:
   - .cue/master/task/auth-login.md
 ```
 
-- Paths are relative to `.cue/` (the same form `cue list` reports).
+- Paths are relative to git root (project root)
 - Supply `refs:` whenever the artifact links to, derives from, or references
   another artifact. An artifact with no references simply omits the field.
 - The `cue-*` tools accept `refs` as an array of strings (default `[]`); a
