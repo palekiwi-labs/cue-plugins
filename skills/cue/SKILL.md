@@ -412,9 +412,10 @@ manual file-writing tools (like `write` or `bash echo`) to create files inside `
 
 ### Artifact Hygiene
 
+- **`log.md` history file**: Lives at the branch root (`.cue/<branch>/log.md`), managed by `cue log`,
+  not `cue add`.
 - **`spec/` directory**: Keep root artifacts focused on stable, human-authored context. No technical
-  analysis. Use `--root` for `index.md` and `tickets/`. (The `log.md` history file lives at the
-  branch root, `.cue/<branch>/log.md`, and is managed by `cue log`, not `cue add`.)
+  analysis. Use `--root` for `index.md` and `tickets/`.
 - **`task/` artifacts**: Always point-in-time (never use `--root`). Always written
   to the master branch by `cue-task` (`--branch master` is passed internally).
   Represent the primary unit of work. Never create on feature branches.
