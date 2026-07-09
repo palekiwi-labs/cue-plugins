@@ -78,7 +78,7 @@ Typical root documents:
 
 - `spec/index.md`: The anchor. Intent, scope, requirements, prerequisites (e.g., related
   branches/PRs). **MUST NOT** contain technical analysis, implementation details, or code snippets.
-- `spec/log.md`: Cumulative history of findings and decisions (managed by `cue log`).
+- `log.md` (branch root): Cumulative history of findings and decisions (managed by `cue log`).
 - `spec/tickets/`: Source material for external reference (e.g., cached
   ticket text). Not work items — link to these from `task` artifacts.
 - `plan/index.md`: The master plan. Translates `spec/index.md` into a technical solution and
@@ -413,7 +413,8 @@ manual file-writing tools (like `write` or `bash echo`) to create files inside `
 ### Artifact Hygiene
 
 - **`spec/` directory**: Keep root artifacts focused on stable, human-authored context. No technical
-  analysis. Use `--root` for `index.md`, `log.md`, and `tickets/`.
+  analysis. Use `--root` for `index.md` and `tickets/`. (The `log.md` history file lives at the
+  branch root, `.cue/<branch>/log.md`, and is managed by `cue log`, not `cue add`.)
 - **`task/` artifacts**: Always point-in-time (never use `--root`). Always written
   to the master branch by `cue-task` (`--branch master` is passed internally).
   Represent the primary unit of work. Never create on feature branches.
