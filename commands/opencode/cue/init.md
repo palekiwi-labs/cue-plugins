@@ -6,7 +6,6 @@ PWD: !`pwd`
 
 !`$HOME/.config/opencode/scripts/git-context.sh`
 
-Active cue context:
 !`cue status 2>/dev/null || echo "(cue status unavailable)"`
 
 !`cue context render --profile default 2>/dev/null`
