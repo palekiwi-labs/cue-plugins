@@ -334,11 +334,11 @@ When work begins on a feature branch:
    the master task file.
 2. Add a reference in the feature branch's `spec/index.md` or `plan/index.md`:
    `Implements: task/<filename>.md`.
-3. When acceptance criteria are verified, set `status: complete` and clear
-   `branch:` in the master task file.
+3. When acceptance criteria are verified, set `status: complete`.
 
 Status updates are always made in place on the master task file, from any
-branch session.
+branch session. The `branch:` list is a historical record and is retained after
+completion.
 
 ### Creating a task
 
