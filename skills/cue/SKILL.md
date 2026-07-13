@@ -181,7 +181,7 @@ priority: normal # critical | high | normal | low
 title: "Short display title"
 refs: # paths this task links to; see References
   - .cue/master/spec/index.md
-branch: "" # set to the working branch name when in-progress
+branch: [] # list of branch names where this task is being worked on
 ---
 ```
 
@@ -256,8 +256,8 @@ tasks; they never copy them.
 
 When work begins on a feature branch:
 
-1. Set `status: in-progress` and `branch: <feature-branch>` in the master
-   task file.
+1. Set `status: in-progress` and add the branch name to the `branch:` list in
+   the master task file.
 2. Add a reference in the feature branch's `spec/index.md` or `plan/index.md`:
    `Implements: task/<filename>.md`.
 3. When acceptance criteria are verified, set `status: complete` and clear
@@ -269,12 +269,18 @@ branch session.
 ### Creating a task
 
 `cue-task` always writes to the master branch directory (`.cue/master/task/`)
-regardless of the current checkout, by passing `--branch master` internally.
-Branch placement is not a caller decision for tasks.
+regardless of the current checkout, by passing `--branch master --root`
+internally. Branch placement is not a caller decision for tasks.
+
+Task cards are stored **flat**: `.cue/master/task/<slug>.md` — no
+`<timestamp>-<hash>` subdirectory. The filename stem is the slug and the
+unique identity of the task. Slug rules:
+
+- Use lowercase kebab-case (e.g., `auth-login.md`).
+- No numeric IDs.
+- The slug `master` is reserved and will be rejected by `cue add`.
 
 **Create with:** `cue-task(filename: "auth-login.md", title: "...", content: "...")`
-
-Tasks are always point-in-time artifacts. Never use `--root` for tasks.
 
 ---
 
@@ -416,9 +422,11 @@ manual file-writing tools (like `write` or `bash echo`) to create files inside `
   not `cue add`.
 - **`spec/` directory**: Keep root artifacts focused on stable, human-authored context. No technical
   analysis. Use `--root` for `index.md` and `tickets/`.
-- **`task/` artifacts**: Always point-in-time (never use `--root`). Always written
-  to the master branch by `cue-task` (`--branch master` is passed internally).
-  Represent the primary unit of work. Never create on feature branches.
+- **`task/` artifacts**: Stored **flat** at `.cue/master/task/<slug>.md` (no
+  timestamp subdirectory). Always written to the master branch by `cue-task`
+  (`--branch master --root` is passed internally). Represent the primary unit
+  of work. The slug `master` is reserved and rejected by `cue add`. Never
+  create task artifacts on feature branches.
 - **`plan/` directory**: Root artifact for `index.md` (master plan). All executive plans are
   point-in-time (default, no `--root`).
 - **`todo/` artifacts**: Always point-in-time (never use `--root`). Represent
