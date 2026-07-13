@@ -18,8 +18,9 @@ const cueNoteTool = tool({
     refs: tool.schema.array(tool.schema.string()).default([]).describe(
       "Artifact paths (relative to .cue/) this note links to. Emitted as a `refs:` YAML list."
     ),
-    branch: tool.schema.string().optional().describe(
-      "Write note to a specific branch instead of current"
+    task: tool.schema.string().optional().describe(
+      "Override active task scope for this invocation (without modifying .cue/HEAD). " +
+      "Use 'master' for the global context."
     ),
     dir: tool.schema.string().optional().describe(
       "Run cue as if started in this directory instead of the session directory. " +
@@ -32,7 +33,7 @@ const cueNoteTool = tool({
       await Bun.write(tempPath, args.content)
 
       const dirFlag = args.dir ? ["--dir", args.dir] : []
-      const branchFlag = args.branch ? ["--branch", args.branch] : []
+      const taskFlag = args.task ? ["--task", args.task] : []
       const frontmatter: Record<string, string | string[]> = {
         status: args.status ?? "open",
         refs: args.refs,
@@ -41,7 +42,7 @@ const cueNoteTool = tool({
 
       // Notes are root-level by default: nesting under <ts>-<hash> provides no
       // value for authored documents and prevents subdirectory organization.
-      const output = await Bun.$`cue add ${dirFlag} ${branchFlag} --type note --root ${fmFlags} --file ${tempPath} ${args.filename}`
+      const output = await Bun.$`cue add ${dirFlag} ${taskFlag} --type note --root ${fmFlags} --file ${tempPath} ${args.filename}`
         .cwd(context.directory)
         .text()
 
