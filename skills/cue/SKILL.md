@@ -64,7 +64,9 @@ refs:
 
 ## Directory Structure
 
-Each branch of work has an isolated directory at `.cue/<branch_name>/`.
+Each context has an isolated directory at `.cue/<scope>/`, where `<scope>` is
+`master` (the global context) or a task slug. The active scope is resolved from
+`.cue/HEAD` (see *Active Context and Scope Resolution* below).
 If the `.cue/` directory is missing, run `cue init` to initialize the repository.
 
 ### Root artifacts
@@ -102,6 +104,78 @@ sessions run in parallel.
 - `trace/<timestamp>-<hash>/<name>`: Artifacts tied to the current git state (error logs, analysis
   results, code review output, audit trails).
 - `tmp/<timestamp>-<hash>/<name>`: Ephemeral per-session data not needed long-term.
+
+## Active Context and Scope Resolution
+
+Every artifact write and read is scoped to a **context directory** under
+`.cue/`. The active context is determined by `.cue/HEAD` — a plain-text file
+containing the current task slug (or `master`). The git branch is **no longer**
+consulted for scope resolution.
+
+### Scope resolution precedence
+
+When a command needs to know which context to write to or read from, it resolves
+the scope in this order:
+
+1. **`--task <slug>` flag** — overrides the active context for a single
+   invocation **without** modifying `.cue/HEAD`. Available on `cue add` and
+   `cue log` (`add` and `list`). Use it to write to a different task's scope
+   without switching away from the current context.
+2. **`.cue/HEAD`** — when no `--task` flag is given, the scope is read from
+   `.cue/HEAD`. If the file is absent or empty, the scope defaults to `master`
+   (the global context).
+
+`master` is the **global context**: artifacts written there are shared across
+all tasks. Any other slug (e.g., `auth-login`) is a **task-scoped context**
+directory at `.cue/<slug>/`, auto-created by `cue switch`.
+
+### `.cue/HEAD` semantics
+
+- Absent, empty, or containing `master` → the global context (`master`) is
+  active.
+- Any other value → that task's context directory (`.cue/<slug>/`) is active.
+- Created by `cue switch`; read by every scoped command.
+
+### `cue switch <slug>`
+
+Switches the active context by writing the slug to `.cue/HEAD` and creating
+`.cue/<slug>/` if it does not exist.
+
+```sh
+cue switch auth-login                        # switch to the auth-login task
+cue switch master                            # return to the global context
+cue switch .cue/master/task/auth-login.md    # derive slug from the filename stem
+cue switch --branch feat/auth-login          # match a task by its branch: list
+```
+
+`--branch <name>` scans task cards in `master/task/*.md` for one whose
+frontmatter `branch:` list contains `<name>`. If no match is found it prints a
+notice and falls back to `master` (a no-op switch).
+
+Add `--json` for machine-readable output:
+`{"context":"<slug>","global":false}` or `{"context":"master","global":true}`.
+
+### `cue status`
+
+Prints the active context. With a task active, it reads the matching task card
+(`master/task/<slug>.md`) for the title and status:
+
+```sh
+$ cue status
+active task: auth-login
+  title: Implement Login
+  status: in-progress
+  context: .cue/auth-login/
+
+$ cue status          # global context active
+active context: master (global)
+```
+
+Add `--json` for structured output:
+
+- Global: `{"context":"master","global":true}`
+- Task: `{"context":"<slug>","global":false,"title":"...","status":"..."}`
+  (`title`/`status` are `null` when the card is absent or lacks the field).
 
 ## The `plan` Artifact Type
 
