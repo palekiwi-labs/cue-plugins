@@ -38,7 +38,7 @@ const cueTaskTool = tool({
       }
       const fmFlags = frontmatterFlags(frontmatter)
 
-      const output = await Bun.$`cue add ${dirFlag} --type task --branch master --root ${fmFlags} --file ${tempPath} ${args.filename}`
+      const output = await Bun.$`cue add ${dirFlag} --type task --task master --root ${fmFlags} --file ${tempPath} ${args.filename}`
         .cwd(context.directory)
         .text()
 

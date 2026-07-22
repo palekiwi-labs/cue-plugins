@@ -10,8 +10,9 @@ const cueLogTool = tool({
     found: tool.schema.array(tool.schema.string()).optional().describe("Findings discovered"),
     decided: tool.schema.array(tool.schema.string()).optional().describe("Decisions made"),
     open: tool.schema.array(tool.schema.string()).optional().describe("Remaining questions"),
-    branch: tool.schema.string().optional().describe(
-      "Write log entry to a specific branch instead of current"
+    task: tool.schema.string().optional().describe(
+      "Override active task scope for this invocation (without modifying .cue/HEAD). " +
+      "Use 'master' for the global context."
     ),
     dir: tool.schema.string().optional().describe(
       "Run cue as if started in this directory instead of the session directory. " +
@@ -33,8 +34,8 @@ const cueLogTool = tool({
     try {
       await Bun.write(tempPath, JSON.stringify(payload))
       const dirFlag = args.dir ? ["--dir", args.dir] : []
-      const branchFlag = args.branch ? ["--branch", args.branch] : []
-      await Bun.$`cue log add ${dirFlag} ${branchFlag} --file ${tempPath}`.cwd(context.directory).quiet()
+      const taskFlag = args.task ? ["--task", args.task] : []
+      await Bun.$`cue log add ${dirFlag} ${taskFlag} --file ${tempPath}`.cwd(context.directory).quiet()
       return `Logged milestone: ${args.title}`
     } finally {
       // Clean up the temporary file

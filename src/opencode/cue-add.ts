@@ -25,8 +25,9 @@ const cueAddTool = tool({
       "A value may be a string or an array of strings; an array becomes a YAML list " +
       "(e.g. { refs: ['master/spec/index.md'] })."
     ),
-    branch: tool.schema.string().optional().describe(
-      "Save artifact to a specific branch instead of current"
+    task: tool.schema.string().optional().describe(
+      "Override active task scope for this invocation (without modifying .cue/HEAD). " +
+      "Use 'master' for the global context."
     ),
     dir: tool.schema.string().optional().describe(
       "Run cue as if started in this directory instead of the session directory. " +
@@ -42,10 +43,10 @@ const cueAddTool = tool({
       // 2. Tell cue to read from that file (Safe, content is not a CLI arg)
       const dirFlag = args.dir ? ["--dir", args.dir] : []
       const rootFlag = args.root ? ["--root"] : []
-      const branchFlag = args.branch ? ["--branch", args.branch] : []
+      const taskFlag = args.task ? ["--task", args.task] : []
       const fmFlags = args.frontmatter ? frontmatterFlags(args.frontmatter) : []
 
-      const output = await Bun.$`cue add ${dirFlag} --type ${args.type} ${rootFlag} ${branchFlag} ${fmFlags} --file ${tempPath} ${args.filename}`
+      const output = await Bun.$`cue add ${dirFlag} --type ${args.type} ${rootFlag} ${taskFlag} ${fmFlags} --file ${tempPath} ${args.filename}`
         .cwd(context.directory)
         .text()
 
