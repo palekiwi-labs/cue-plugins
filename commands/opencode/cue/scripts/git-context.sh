@@ -2,8 +2,9 @@
 # Determine git context for code reviews and PRs
 
 # 1. Determine Base Branch
-if [ -f .git/GIT_BASE ]; then
-    BASE_BRANCH=$(cat .git/GIT_BASE)
+GIT_DIR=$(git rev-parse --git-dir 2>/dev/null)
+if [ -n "$GIT_DIR" ] && [ -f "$GIT_DIR/GIT_BASE" ]; then
+    BASE_BRANCH=$(cat "$GIT_DIR/GIT_BASE")
 elif git show-ref --verify --quiet refs/heads/master; then
     BASE_BRANCH="master"
 elif git show-ref --verify --quiet refs/heads/main; then
