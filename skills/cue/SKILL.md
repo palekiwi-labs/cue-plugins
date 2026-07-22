@@ -263,7 +263,7 @@ branch: [] # list of branch names where this task is being worked on
 
 - `open`: not yet started.
 - `in-progress`: actively being worked on. Set `branch:` when transitioning here.
-- `complete`: all acceptance criteria verified and Evidence cells filled.
+- `complete`: all acceptance criteria verified and Evidence fields filled.
 - `closed`: no longer relevant (superseded, abandoned, or made obsolete).
 
 **`priority` values** (bounded enum — do not use free integers):
@@ -291,23 +291,26 @@ in the body, not as a sub-priority field.
 
 ## Acceptance Criteria
 
-| #   | Criterion (outcome) | Verify by         | Evidence          |
-| --- | ------------------- | ----------------- | ----------------- |
-| 1   | Tests pass          | `pytest tests/`   | (paste exit code) |
-| 2   | Manual QA passed    | human attestation | (who / when)      |
+1. **Tests pass.**
+   - Verify by: `pytest tests/`
+   - Evidence: (paste exit code)
+
+2. **Manual QA passed.**
+   - Verify by: human attestation
+   - Evidence: (who / when)
 ```
 
 **Acceptance criteria rules:**
 
 - Criteria describe _outcomes_ ("tests pass"), never _actions_ ("write tests").
   Actions belong in the `plan`.
-- The Evidence column must be filled before a criterion is considered met.
-- An agent MUST NOT fill the Evidence cell for a human-attested criterion on
+- The Evidence field must be filled before a criterion is considered met.
+- An agent MUST NOT fill the Evidence field for a human-attested criterion on
   its own authority. It must obtain explicit user attestation in the
-  conversation, or leave the cell blank and report it as blocking completion.
-- A `task` may not transition to `complete` while any Evidence cell is empty.
-- Do NOT use GFM checkboxes (`- [ ]`) in the criteria table. The executive
-  plan is the only place with checkboxes.
+  conversation, or leave the field blank and report it as blocking completion.
+- A `task` may not transition to `complete` while any Evidence field is empty.
+- Do NOT use GFM checkboxes (`- [ ]`) in the acceptance criteria list. The
+  executive plan is the only place with checkboxes.
 
 ### Relationship to other artifact types
 
@@ -544,7 +547,7 @@ a caller decision — tasks always live on master.
 **Arguments:**
 
 - `filename`: Slug-based name (e.g., `auth-login.md`). No numeric ID.
-- `content`: Full body of the task, including the Acceptance Criteria table.
+- `content`: Full body of the task, including the Acceptance Criteria.
 - `title`: Short display title for the board.
 - `status` (optional): `open | in-progress | complete | closed`. Default is `open`.
 - `priority` (optional): `critical | high | normal | low`. Default is `normal`.
@@ -665,8 +668,8 @@ To ensure consistency and quality across sessions, follow these execution princi
 
 ### Agent Context Discipline
 
-Agents share the `.cue/HEAD` file with the user and with other agents running
-in the same workspace. To avoid silent context collisions, follow these rules:
+The active context is pinned by `.cue/HEAD`. Be deliberate about which context
+you write to:
 
 1. **Orient at session start.** Call `cue status --json` (or read the output
    injected by `/cue:init`) to determine the active task context before writing
@@ -680,11 +683,7 @@ in the same workspace. To avoid silent context collisions, follow these rules:
    a task, or writing a task card which always targets `master`), pass `--task`
    explicitly and note why in a log entry.
 
-4. **Never call `cue switch`.** `cue switch` is a user-facing tool for pinning
-   working focus. Agents must not modify `.cue/HEAD`; doing so silently changes
-   the user's view of their own workspace.
-
-5. **Sub-agent handoff: pass the context slug explicitly.** When spawning a
+4. **Sub-agent handoff: pass the context slug explicitly.** When spawning a
    sub-agent, include the task slug in the prompt so it does not need to infer
    context:
 
