@@ -18,6 +18,10 @@ const cuePlanTool = tool({
     refs: tool.schema.array(tool.schema.string()).default([]).describe(
       "Artifact paths (relative to .cue/) this plan links to. Emitted as a `refs:` YAML list."
     ),
+    task: tool.schema.string().optional().describe(
+      "Override active task scope for this invocation (without modifying .cue/HEAD). " +
+      "Use 'master' for the global context."
+    ),
     dir: tool.schema.string().optional().describe(
       "Run cue as if started in this directory instead of the session directory. " +
       "Mirrors the git -C convention; use to operate on another project's .cue/ directory."
@@ -29,6 +33,7 @@ const cuePlanTool = tool({
       await Bun.write(tempPath, args.content)
 
       const dirFlag = args.dir ? ["--dir", args.dir] : []
+      const taskFlag = args.task ? ["--task", args.task] : []
       const rootFlag = args.root ? ["--root"] : []
       const frontmatter: Record<string, string | string[]> = {
         status: args.status ?? "open",
@@ -36,7 +41,7 @@ const cuePlanTool = tool({
       }
       const fmFlags = frontmatterFlags(frontmatter)
 
-      const output = await Bun.$`cue add ${dirFlag} --type plan ${rootFlag} ${fmFlags} --file ${tempPath} ${args.filename}`
+      const output = await Bun.$`cue add ${dirFlag} --type plan ${rootFlag} ${taskFlag} ${fmFlags} --file ${tempPath} ${args.filename}`
         .cwd(context.directory)
         .text()
 
