@@ -7,21 +7,20 @@ import { unlink } from "node:fs/promises"
 const castAgentTaskTool = tool({
   description: `Launch a new agent to handle complex, multistep tasks autonomously.
 
-When to use:
-- For complex tasks requiring multiple steps, research, or cross-file changes.
-- To explore a large or unfamiliar area of the codebase.
-- To create a technical plan before implementation.
-- To run a full build/test cycle and fix issues.
+You must specify a subagent_type parameter to select which agent type to use.
 
 When NOT to use:
-- For simple, single-file edits or direct tool calls.
-- For information you already have in context.
-- When you can easily do it yourself in 1-2 steps.
+- To read a specific file path; use Read or Glob instead.
+- To find a specific class or symbol definition; use Grep instead.
+- To search code within a specific file or 2-3 files; use Read instead.
+- If no available agent is a good fit; use other tools directly.
 
-Guidance:
-- Prefer 'explore' for codebase research to reduce context usage.
-- Use 'plan' to break down complex features before building.
-- You can launch multiple agents in parallel for faster discovery.`,
+Usage notes:
+- Launch multiple agents concurrently whenever possible by emitting multiple tool uses in one message.
+- Once you have delegated work to an agent, do not duplicate that work yourself.
+- Each invocation starts with a fresh context. Your prompt should contain a highly detailed task description and specify exactly what information the agent should return in its final message.
+- Clearly tell the agent whether it should write code or only do research.
+- The agent's output is not visible to the user; summarize the result back to the user yourself.`,
   args: {
     description: tool.schema.string().describe("A short (3-5 words) description of the task"),
     prompt: tool.schema.string().describe("The task for the agent to perform"),
