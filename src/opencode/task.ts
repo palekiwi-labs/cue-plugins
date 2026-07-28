@@ -121,7 +121,12 @@ Usage notes:
 export const CastAgentTaskPlugin: Plugin = async () => {
   return {
     tool: {
-      "task": castAgentTaskTool,
+      // TEMPORARY test name: registered as "casttask" (NOT "task") so it does
+      // not shadow opencode's built-in `task` tool while we test the cast-agent
+      // delegation path in isolation. Renaming away from id "task" also drops
+      // the inherited describeTask available-agents injection -- acceptable for
+      // testing. Revert to "task" when promoting to the real drop-in.
+      "casttask": castAgentTaskTool,
     },
   }
 }
