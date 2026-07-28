@@ -37,8 +37,7 @@ Usage notes:
           return
         }
 
-        // TODO: pass --agent <subagent_type> once cast-agent supports it (Layer-1 dependency)
-        const child = spawn("cast-agent", ["run", "--harness", "opencode", "--file", tempPath], {
+        const child = spawn("cast-agent", ["run", "--harness", "opencode", "--agent", args.subagent_type, "--file", tempPath], {
           detached: true,
           stdio: ["ignore", "pipe", "pipe"],
           cwd: context.directory,
