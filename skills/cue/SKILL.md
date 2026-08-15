@@ -25,27 +25,17 @@ The system is organized around five altitudes:
 
 ## Frontmatter Management
 
-Markdown artifacts in `cue` use YAML frontmatter to track metadata.
-Agents MUST manage file characteristics (like status) by updating this block.
-
-- **Source of Truth**: The YAML frontmatter is the only place for metadata.
-- **No Headers**: NEVER prepend markdown headers like `# Status: complete`. This invalidates the file structure and breaks frontmatter parsing.
-- **Updates**: When a file already exists, use the `edit` tool to update the `status` field within the `---` delimiters.
+Markdown artifacts in `cue` use YAML frontmatter as the single source of truth
+for metadata.
 
 `status` should be tracked with: `open|in-progress|complete|closed`.
 Type-specific enums are defined in each type section below.
-
-**Markdown frontmatter is used for managing files in `cue`. Agents should never make changes that invalidate markdown frontmatter.**
-
-**NOTE: Usage of `cue` commands and editing of cue files inside the cue directory is EXPLICITLY PERMITTED
-during "plan mode" to allow for documentation and strategy refinement without leaving the planning phase.**
 
 ### References (`refs:`)
 
 Every artifact SHOULD declare the other artifacts it directly relates to via a
 `refs:` frontmatter field — a flat list of paths relative to git root. These links
-are what make the corpus traversable. Populating `refs:` is a critically important
-frontmatter discipline.
+are what make the corpus traversable.
 
 ```yaml
 refs:
@@ -77,14 +67,10 @@ it has a well-known path that other files, agents, and configs can reference rel
 
 Typical root documents:
 
-- `spec/index.md`: The anchor. Intent, scope, requirements, prerequisites (e.g., related
-  branches/PRs). **MUST NOT** contain technical analysis, implementation details, or code snippets.
+- `spec/index.md`: The anchor document defining project scope, intent, and prerequisites.
 - `log.md` (context root): Cumulative history of findings and decisions (managed by `cue log`).
-- `spec/tickets/`: Source material for external reference (e.g., cached
-  ticket text). Not work items — link to these from `task` artifacts.
-- `plan/index.md`: The master plan. Translates `spec/index.md` into a technical solution and
-  chosen approach. Covers phases, architecture, and key design choices. May contain code snippets
-  to clarify concepts. **MUST NOT** log progress or completed/pending tasks.
+- `spec/tickets/`: Source material for external reference (e.g., cached ticket text).
+- `plan/index.md`: The master plan translating project scope into a technical architecture and approach.
 
 **Create root artifacts with the `--root` flag:**
 `cue-plan(filename: "index.md", root: true, content: "...")`
@@ -502,12 +488,7 @@ parameter of `cue-note` accepts subdirectory paths for this purpose.
 
 ## Managing Artifacts (cue-add & edit)
 
-Artifacts within the `.cue/` directory must be created using the `cue-add` tool. However, if the file
-already exists, use the standard `edit` tool to make changes to it. This ensures they are correctly
-versioned and placed according to their purpose.
-
-**CRITICAL: Use the `cue-add` tool ONLY to create NEW files. For existing files, use the `edit` tool. Do not use
-manual file-writing tools (like `write` or `bash echo`) to create files inside `.cue/`.**
+Artifacts within `.cue/` are created using specialized tool calls (`cue-plan`, `cue-task`, `cue-todo`, `cue-note`, or `cue-add`). Existing artifacts are updated using the standard `edit` tool.
 
 ### Artifact Hygiene
 
@@ -707,14 +688,38 @@ you write to:
    > `cue add` and `cue log` calls unless you have a specific reason to write
    > to a different context."
 
-### No Automated Commits to .cue/
+## DOs and DON'Ts
 
-**CRITICAL: Agents MUST NOT attempt to commit changes to the `.cue/` directory.**
-Memory artifacts are managed in a separate git worktree and should only be committed by humans.
-If you modify files in `.cue/`, leave them staged or unstaged as appropriate, but do not include them
-in any `git commit` command.
+### Frontmatter & Artifact Hygiene
+- **DO** use YAML frontmatter as the single source of truth for metadata (e.g., `status`, `priority`, `kind`, `parent`, `refs`).
+- **DO** use specialized tools (`cue-plan`, `cue-task`, `cue-todo`, `cue-note`, `cue-add`) to create **new** artifacts.
+- **DO** use the `edit` tool to update **existing** artifacts.
+- **DON'T** prepend markdown headers like `# Status: complete` above or below frontmatter.
+- **DON'T** use manual file-writing tools (`write`, `bash echo`) to create files inside `.cue/`.
 
-## Style & Formatting
+### Task & Spec Content
+- **DO** write outcome-oriented acceptance criteria ("tests pass") rather than action steps ("write tests").
+- **DO** keep `spec/index.md` focused purely on scope and project intent.
+- **DON'T** include technical analysis, implementation details, or code snippets in `spec/index.md`.
+- **DON'T** log progress or pending tasks in `plan/index.md` (master plan).
+- **DON'T** use GFM checkboxes (`- [ ]`) in acceptance criteria (checkboxes belong in executive plans or `todo` checklists).
+- **DON'T** fill Evidence fields for human-attested criteria without explicit user confirmation in conversation.
+- **DON'T** mark a `task` as `complete` while any Evidence field remains empty.
 
-- **Line Length**: Keep code under 80 columns. 132 columns is acceptable only if it significantly improves readability.
-- Do **NOT** use any emojis
+### Task Placement & Hierarchy
+- **DO** store task cards flat exclusively on master at `.cue/master/task/<slug>.md`.
+- **DO** declare parent tasks using the scalar `parent: parent-slug` field on child task cards.
+- **DON'T** create `task` artifacts on feature branches.
+- **DON'T** use numeric IDs or reserved names (`master`) for task slugs.
+- **DON'T** add numeric sub-ranks or integer priority fields to tasks.
+
+### Execution & Git Discipline
+- **DO** orient context at session start using `cue status --json`.
+- **DO** log milestones, decisions, and dead-ends immediately using `cue-log`.
+- **DO** resolve all open task-scoped `todo` artifacts before marking a task complete.
+- **DON'T** attempt to include changes in `.cue/` in `git commit` commands (memory artifacts are managed in a separate git worktree).
+- **DON'T** fix unrelated out-of-scope issues during active task execution (capture them in `todo` or `note` artifacts instead).
+
+### Style & Formatting
+- **DO** keep line lengths under 80 columns (132 columns maximum when readability requires it).
+- **DON'T** use emojis in artifacts, code, or logs.
