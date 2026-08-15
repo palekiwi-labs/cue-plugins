@@ -14,6 +14,9 @@ const cueTodoTool = tool({
     priority: tool.schema.enum(["critical", "high", "normal", "low"]).optional().default("normal").describe(
       "Priority of the todo"
     ),
+    parent: tool.schema.string().optional().describe(
+      "Parent artifact path or task slug (e.g. 'plan/index.md' or 'auth-redesign'). Emitted as `parent:` frontmatter."
+    ),
     refs: tool.schema.array(tool.schema.string()).default([]).describe(
       "Artifact paths (relative to .cue/) this todo links to. Emitted as a `refs:` YAML list."
     ),
@@ -37,6 +40,9 @@ const cueTodoTool = tool({
         status: args.status ?? "open",
         priority: args.priority ?? "normal",
         refs: args.refs,
+      }
+      if (args.parent) {
+        frontmatter.parent = args.parent
       }
       const fmFlags = frontmatterFlags(frontmatter)
 
