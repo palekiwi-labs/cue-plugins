@@ -29,6 +29,10 @@ Artifacts track lifecycle status: `status: open|in-progress|complete|closed`.
 
 Bounded priority classification: `priority: critical|high|normal|low`.
 
+### `kind:`
+
+Task category classification: `kind: research|design|build|review|coord` (see `task` contract below).
+
 ### `parent:`
 
 Child artifacts declare their parent via a scalar path or slug: `parent: parent-slug-or-path` (e.g., child task `parent: auth-redesign`, or executive plan `parent: plan/index.md`). Relationships point upward (child -> parent).
@@ -77,6 +81,19 @@ Context scope determines where artifacts are read and written:
 - Primary unit of work; lives exclusively at `.cue/master/task/<slug>.md`.
 - Contains acceptance criteria detailing verified outcomes and required evidence.
 - Tracked on master across feature branches via `branch:` frontmatter list.
+
+#### Task Categories (`kind:`)
+
+Tasks declare operational expectations via `kind: research|design|build|review|coord`:
+- **`kind: research`**: Exploration & feasibility analysis.
+- **`kind: design`**: Specification & context setup.
+- **`kind: build`**: Feature implementation & test execution.
+- **`kind: review`**: Code review & evaluation trace generation.
+- **`kind: coord`**: Multi-component or cross-repository orchestration.
+
+Progression flow: `research` -> `design` -> `build` -> `review` -> `coord` *(direct entry at `kind: build` supported for routine chores or bug fixes)*.
+
+For detailed operational guidelines and outputs per category, see `skills/cue/reference/task-kinds.md`.
 
 ### `spec` (WHY)
 
