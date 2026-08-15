@@ -28,11 +28,26 @@ The system is organized around five altitudes:
 Markdown artifacts in `cue` use YAML frontmatter as the single source of truth
 for metadata.
 
-### Status (`status:`)
+### `status:`
 
-`status` should be tracked with: `open|in-progress|complete|closed`.
+Artifacts track status using `status: open|in-progress|complete|closed`.
 
-### References (`refs:`)
+### `priority:`
+
+Artifacts track priority using `priority: critical|high|normal|low`.
+
+### `parent:`
+
+Child artifacts declare their parent artifact using the scalar `parent:` frontmatter
+field (e.g., child tasks pointing to a parent task `parent: auth-redesign`, or executive
+plans pointing to a master plan `parent: plan/index.md`). Relationships always point
+upward (child -> parent). To find all child artifacts of a given parent, filter by parent:
+
+```bash
+cue list --filter parent=<parent-slug-or-path>
+```
+
+### `refs:`
 
 Every artifact SHOULD declare the other artifacts it directly relates to via a
 `refs:` frontmatter field — a flat list of paths relative to git root. These links
@@ -109,33 +124,6 @@ Prints the active context.
 
 Add `--json` for structured output:
 
-## The `plan` Artifact Type
-
-The `plan` type has two distinct uses determined by whether it is a root or point-in-time artifact:
-
-### Master Plan (root)
-
-**Path:** `plan/index.md`
-
-The master plan is a living document that describes the full technical solution for the branch. It is
-created once and updated in place as the approach evolves. Contents include:
-
-- Chosen architecture and approach
-- Key design decisions
-- Implementation phases and their scope
-
-### Executive Plan (point-in-time, default)
-
-**Path:** `plan/<timestamp>-<hash>/<name>.md`
-
-An executive plan is a session- or slice-specific document that translates a portion of the master
-plan into concrete, ordered steps.
-
-Requirements:
-
-- **Link via `refs:`**: Executive plans link to their master plan (e.g. `.cue/master/plan/index.md`) via `refs:` frontmatter.
-- **Steps**: An ordered sequence of `[ ]` checkbox tasks with sufficient detail for an agent to execute step-by-step.
-
 ## The `task` Artifact Type
 
 `task` is the primary unit of work and the canonical kanban board card. Every
@@ -149,9 +137,7 @@ see the `cue-task` skill.
 Tasks live exclusively at `.cue/master/task/`. They are authored, updated, and
 closed there regardless of which feature branch performs the work. Because `.cue/`
 is a single git worktree, any branch session can read and write `.cue/master/task/`
-directly. This gives the board a single, always-complete, globally visible location.
-
-Never create `task` artifacts on feature branches.
+directly.
 
 ### Structure & Frontmatter
 
@@ -170,46 +156,12 @@ branch: [] # list of branch names where this task is being worked on
 ---
 ```
 
-**`status` values:**
-
-- `open`: not yet started.
-- `in-progress`: actively being worked on. Set `branch:` when transitioning here.
-- `complete`: all acceptance criteria verified and Evidence fields filled.
-- `closed`: no longer relevant (superseded, abandoned, or made obsolete).
-
-**`priority` values** (bounded enum — do not use free integers):
-
-- `critical`: blocks other work or the project cannot ship; do next.
-- `high`: important and intended for the current focus; do soon.
-- `normal`: real work, no urgency. **Default.**
-- `low`: nice-to-have; address if convenient.
-
-Within a priority band, ordering is a runtime judgment call. Do not add numeric
-sub-ranks. If tasks must be sequenced, express that as a prose dependency note
-in the body, not as a sub-priority field.
-
-### Task Hierarchy (`parent:`)
-
-Child tasks declare their parent task using the scalar `parent:` frontmatter
-field (e.g., `parent: auth-redesign`). Relationships always point upward (child
--> parent). To find all child tasks of a given parent, filter tasks by parent
-slug:
-
-```bash
-cue list --type task --filter parent=<parent-slug>
-```
-
 ### Body structure
 
 ```markdown
 # <title>
 
 <description: the outcome to be delivered>
-
-## Source
-
-- <optional links to spec/index.md, spec/tickets/, traces, or other
-  artifacts that provide context for this task>
 
 ## Acceptance Criteria
 
@@ -225,13 +177,11 @@ cue list --type task --filter parent=<parent-slug>
 **Acceptance criteria rules:**
 
 - Criteria describe _outcomes_ ("tests pass"), never _actions_ ("write tests").
-  Actions belong in the `plan`.
 - The Evidence field must be filled before a criterion is considered met.
 - An agent MUST NOT fill the Evidence field for a human-attested criterion on
   its own authority. It must obtain explicit user attestation in the
   conversation, or leave the field blank and report it as blocking completion.
 - A `task` may not transition to `complete` while any Evidence field is empty.
-- Do NOT use GFM checkboxes (`- [ ]`) in the acceptance criteria list.
 
 ### Relationship to other artifact types
 
@@ -279,6 +229,33 @@ unique identity of the task. Slug rules:
 - The slug `master` is reserved and will be rejected by `cue add`.
 
 **Create with:** `cue-task(filename: "auth-login.md", title: "...", content: "...")`
+
+## The `plan` Artifact Type
+
+The `plan` type has two distinct uses determined by whether it is a root or point-in-time artifact:
+
+### Master Plan (root)
+
+**Path:** `plan/index.md`
+
+The master plan is a living document that describes the full technical solution for the branch. It is
+created once and updated in place as the approach evolves. Contents include:
+
+- Chosen architecture and approach
+- Key design decisions
+- Implementation phases and their scope
+
+### Executive Plan (point-in-time, default)
+
+**Path:** `plan/<timestamp>-<hash>/<name>.md`
+
+An executive plan is a session- or slice-specific document that translates a portion of the master
+plan into concrete, ordered steps.
+
+Requirements:
+
+- **Parent (`parent:`)**: Executive plans must link to their master plan (e.g. `parent: plan/index.md`) via the `parent:` frontmatter field.
+- **Steps**: An ordered sequence of `[ ]` checkbox tasks with sufficient detail for an agent to execute step-by-step.
 
 ---
 
@@ -454,6 +431,7 @@ Use `cue-plan` to create technical plans. It automatically sets the `status` fro
 - `content`: The full content of the plan.
 - `root` (optional boolean): When `true`, saves as a master plan at `plan/index.md`. Default is `false`.
 - `status` (optional): `open | complete`. Default is `open`.
+- `parent` (optional): Parent master plan path (e.g. `plan/index.md`) for executive plans.
 - `refs` (optional): Array of artifact paths this plan links to. Default is `[]`.
 
 #### `cue-task`

@@ -15,6 +15,9 @@ const cuePlanTool = tool({
     status: tool.schema.enum(["open", "in-progress", "complete", "closed"]).optional().default("open").describe(
       "Status of the plan"
     ),
+    parent: tool.schema.string().optional().describe(
+      "Parent master plan path (e.g. 'plan/index.md'). Emitted as `parent:` frontmatter."
+    ),
     refs: tool.schema.array(tool.schema.string()).default([]).describe(
       "Artifact paths (relative to .cue/) this plan links to. Emitted as a `refs:` YAML list."
     ),
@@ -38,6 +41,9 @@ const cuePlanTool = tool({
       const frontmatter: Record<string, string | string[]> = {
         status: args.status ?? "open",
         refs: args.refs,
+      }
+      if (args.parent) {
+        frontmatter.parent = args.parent
       }
       const fmFlags = frontmatterFlags(frontmatter)
 
