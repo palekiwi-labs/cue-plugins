@@ -100,9 +100,32 @@ Context scope determines where artifacts are read and written:
 
 ## Artifact Lifecycle Operations
 
-- **Creation**: Create new artifacts using available harness tools or CLI helpers (`cue-add` or type-specific helpers). Ensure correct type, filename, and initial frontmatter.
+- **Creation**: Create new artifacts using available harness tools (`cue-add`, `cue-plan`, `cue-task`, `cue-todo`, `cue-note`) or CLI helpers (`cue add`).
+  - **Critical Note — Harness Tool Preference**: Always prefer harness-specific integration tools (`cue-*`) over raw shell CLI commands when creating artifacts. Passing text containing code snippets, symbols, quotes, or backticks directly as bash arguments frequently leads to shell escaping failures and corrupted files. Harness tools pass content safely via direct IPC/API parameters.
 - **Modification**: Update existing artifacts in-place using standard text editing tools (`edit`). Never use file overwrite tools that strip or corrupt YAML frontmatter.
-- **Querying & Discovery**: Discover artifacts by filtering context scope, type, or frontmatter fields (`status`, `parent`, `kind`, `priority`).
+- **Querying & Discovery**: Discover artifacts exclusively using `cue list` (or harness query tools). **NEVER** use raw `grep` or `find` inside `.cue/`.
+
+## Querying & Discovery (`cue list`)
+
+Always use `cue list` (or harness tools) to discover and inspect artifacts.
+
+### Key Flags & Filtering
+
+- **`--type <type>` / `-t`**: Filter by category (`task`, `plan`, `spec`, `todo`, `note`, `trace`).
+- **`--task <slug>`**: Target a specific task scope without mutating `.cue/HEAD`.
+- **`--all` / `-a`**: Search across all task context directories.
+- **`--filter <EXPR>`**: Filter frontmatter expressions (`KEY=VALUE`, `KEY!=VALUE`, `KEY~=SUBSTRING`).
+- **`--frontmatter`**: Output JSON containing parsed YAML frontmatter objects (implies `--json`).
+- **`-C <PATH>`**: Query artifacts in another repository directory (mirrors `git -C`).
+
+### Common Discovery Patterns
+
+- **Tasks on master board**: `cue list --task master --type task`
+- **Open/In-progress tasks**: `cue list --task master --type task --filter "status!=complete" --filter "status!=closed"`
+- **Child tasks of a parent**: `cue list --task master --type task --filter "parent=<parent-slug>"`
+- **High priority items**: `cue list --task master --type task --filter "priority=high" --frontmatter`
+
+For complete command details and options, see `skills/cue/reference/cli.md`.
 
 ## History & Logging (`cue-log`)
 
@@ -131,7 +154,8 @@ Always append a log entry immediately after making git commits, making important
 
 - **DO** use YAML frontmatter as the single source of truth for metadata (`status`, `priority`, `kind`, `parent`, `refs`).
 - **DO** update frontmatter `status` to `complete` when all plan/task criteria are met.
-- **DO** use artifact creation tools/helpers for new files and `edit` for existing files.
+- **DO** prefer harness-specific integration tools (`cue-*`) over shell CLI commands when creating artifacts.
+- **DO** use the `edit` tool to update existing artifacts in-place.
 - **DON'T** prepend markdown headers like `# Status: complete` above or below frontmatter.
 - **DON'T** overwrite existing cue artifacts using destructive write tools that strip frontmatter.
 
@@ -152,8 +176,10 @@ Always append a log entry immediately after making git commits, making important
 
 ### Execution & Git Discipline
 
+- **DO** discover and inspect artifacts using `cue list` instead of searching `.cue/` directly.
 - **DO** log milestones, decisions, and dead-ends immediately in `.cue/<context>/log.md`.
 - **DO** resolve all open task-scoped `todo` artifacts before marking a task complete.
+- **DON'T** search `.cue/` directly with `grep` or `find` (use `cue list` to handle frontmatter and proxy stores).
 - **DON'T** include changes in `.cue/` in `git commit` commands.
 - **DON'T** fix unrelated out-of-scope issues during active task execution.
 
