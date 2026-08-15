@@ -12,14 +12,13 @@ using the `cue` CLI tool and a dedicated `.cue/` directory structure.
 
 The system is organized around five altitudes:
 
-- **WHY** — `spec/`: stable, human-authored project intent. Defines what should be true.
-  Does not move. Tasks point up at it.
+- **WHY** — `spec/`: stable project intent. Defines what should be true.
 - **WHAT** — `task/`: the primary unit of work and the kanban board card. Lives exclusively
   on the master branch. Moves through a lifecycle until its outcome is verified.
-- **HOW** — `plan/`: the technical approach. Always subordinate to a `task`. The only place
-  with `[ ]` progress checkboxes.
-- **DEFER** — `todo/`: informal notes capturing out-of-scope discoveries so they are not
-  lost. Optional feeder for `task` artifacts.
+- **HOW** — `plan/`: the technical approach. Always subordinate to a `task`. Contains step-by-step
+  progress checkboxes.
+- **DEFER** — `todo/`: deferred actions, QA checklists, or decision points auxiliary to a
+  `task` or `plan`. Must be resolved before the task is completed.
 - **THINK** — `note/`: spontaneous idea capture and conversation anchors. Thoughts that
   arise outside active work, waiting to be examined. Dissolves into its outcome artifact
   (task, spec, doc) once addressed, then is `closed`.
@@ -99,8 +98,8 @@ sessions run in parallel.
 
 - `plan/<timestamp>-<hash>/<name>.md`: Executive plan for a specific session or implementation
   slice. Step-by-step sequence of tasks. Must begin with a foreword.
-- `todo/<timestamp>-<hash>/<name>.md`: Informal deferred notes captured so
-  they are not lost. Optional feeder for `task` artifacts.
+- `todo/<timestamp>-<hash>/<name>.md`: Deferred action items, QA checklists, or decision points
+  associated with a task.
 - `trace/<timestamp>-<hash>/<name>`: Artifacts tied to the current git state (error logs, analysis
   results, code review output, audit trails).
 - `tmp/<timestamp>-<hash>/<name>`: Ephemeral per-session data not needed long-term.
@@ -233,7 +232,9 @@ The caller names the file. Choose names that are descriptive of the slice (e.g.,
 
 `task` is the primary unit of work and the canonical kanban board card. Every
 discrete piece of planned work must be represented as a `task` before a `plan`
-is created or execution begins.
+is created or execution begins. For detailed task lifecycle categories (`kind:
+research|design|build|review|coord`) and parent-child hierarchies (`parent:`),
+see the `cue-task` skill.
 
 ### Location: master branch only
 
@@ -253,6 +254,8 @@ Every `task` artifact must begin with YAML frontmatter:
 status: open # open | in-progress | complete | closed
 priority: normal # critical | high | normal | low
 title: "Short display title"
+kind: build # optional: research | design | build | review | coord
+parent: parent-slug # optional: slug of the parent task
 refs: # paths this task links to; see References
   - .cue/master/spec/index.md
 branch: [] # list of branch names where this task is being worked on
@@ -276,6 +279,17 @@ branch: [] # list of branch names where this task is being worked on
 Within a priority band, ordering is a runtime judgment call. Do not add numeric
 sub-ranks. If tasks must be sequenced, express that as a prose dependency note
 in the body, not as a sub-priority field.
+
+### Task Hierarchy (`parent:`)
+
+Child tasks declare their parent task using the scalar `parent:` frontmatter
+field (e.g., `parent: auth-redesign`). Relationships always point upward (child
+-> parent). To find all child tasks of a given parent, filter tasks by parent
+slug:
+
+```bash
+cue list --type task --filter parent=<parent-slug>
+```
 
 ### Body structure
 
@@ -309,8 +323,7 @@ in the body, not as a sub-priority field.
   its own authority. It must obtain explicit user attestation in the
   conversation, or leave the field blank and report it as blocking completion.
 - A `task` may not transition to `complete` while any Evidence field is empty.
-- Do NOT use GFM checkboxes (`- [ ]`) in the acceptance criteria list. The
-  executive plan is the only place with checkboxes.
+- Do NOT use GFM checkboxes (`- [ ]`) in the acceptance criteria list.
 
 ### Relationship to other artifact types
 
@@ -322,9 +335,9 @@ in the body, not as a sub-priority field.
   HOW to address the task; executive plans track execution steps. The task
   defines the acceptance criteria (WHAT done looks like); the plan defines the
   steps (HOW to get there). These must not bleed into each other.
-- **`todo`**: An informal `todo` note may be the origin of a `task`. When a
-  `todo` is elevated to a formal `task`, create the `task` on master and mark
-  the `todo` `closed`. No further promotion protocol is required.
+- **`todo`**: A `todo` holds auxiliary actions, QA checklists, or decision points associated
+  with a `task`. If a `todo` represents standalone work beyond the task scope, elevate
+  it to a `task` on master and mark the `todo` `closed`.
 
 ### Cross-branch workflow
 
@@ -364,8 +377,9 @@ unique identity of the task. Slug rules:
 ## The `todo` Artifact Type
 
 `todo` artifacts are always point-in-time (never use `--root`). They capture
-informal notes about work discovered during a session that is out of scope —
-to be addressed later. They are not primary work items; use `task` for that.
+deferred actions, decision points, manual QA checklists, or secondary work
+items that must be executed or resolved in the context of a task. They act as
+an auxiliary to execution plans.
 
 ### Structure & Frontmatter
 
@@ -380,28 +394,30 @@ priority: normal # critical | high | normal | low
 
 Valid statuses for todos are:
 
-- `open`: noted, not yet acted on.
-- `in-progress`: being actively looked at.
-- `complete`: resolved.
+- `open`: pending action or resolution.
+- `in-progress`: actively being worked on or verified.
+- `complete`: resolved or executed.
 - `closed`: no longer relevant.
 
 ### Usage
 
 Use `todo` for:
 
-- Items from a code review that won't be addressed in the current PR
-- Refactor opportunities in unrelated modules
-- Feature ideas or improvements discovered incidentally
-- Technical debt notes
+- QA checklists for manual testing of features
+- Pending business decisions, consultations, or clarifications needed before task completion
+- Deferred follow-up items or code review items
+- Technical debt notes or refactors discovered during execution
 
 `todo` artifacts live alongside the work that triggered them (tied to the same
 git moment), making it easy to trace _why_ the todo was created. File naming is
-caller-defined (e.g., `review-items.md`, `refactor-auth.md`).
+caller-defined (e.g., `qa-checklist.md`, `review-items.md`).
 
-If a `todo` warrants tracked work on the board, create a `task` on master and
-mark the `todo` `closed`.
+If created within a task context, any open `todo` artifacts must be resolved
+before the task can be marked `complete`. If a `todo` represents standalone
+work beyond the current task scope, create a `task` on master and mark the
+`todo` `closed`.
 
-**Create with:** `cue-todo(filename: "review-items.md", content: "# ...")`
+**Create with:** `cue-todo(filename: "qa-checklist.md", content: "# ...")`
 
 ## The `note` Artifact Type
 
@@ -448,7 +464,7 @@ Use `note` for:
   further exchange of opinions, like a forum thread)
 
 A `note` is distinct from a `todo`:
-- `todo` is **action-oriented**: "I discovered work that needs doing eventually."
+- `todo` is **action-oriented**: "I have deferred actions, checklists, or questions that need resolution."
 - `note` is **exploration-oriented**: "I had a thought that needs examining."
 
 If a `note` is addressed and the outcome warrants tracked work, create the
@@ -497,7 +513,7 @@ manual file-writing tools (like `write` or `bash echo`) to create files inside `
 
 - **`log.md` history file**: Lives at the branch root (`.cue/<branch>/log.md`), managed by `cue log`,
   not `cue add`.
-- **`spec/` directory**: Keep root artifacts focused on stable, human-authored context. No technical
+- **`spec/` directory**: Keep root artifacts focused on stable context and scope. No technical
   analysis. Use `--root` for `index.md` and `tickets/`.
 - **`task/` artifacts**: Stored **flat** at `.cue/master/task/<slug>.md` (no
   timestamp subdirectory). Always written to the master context by `cue-task`
@@ -507,7 +523,7 @@ manual file-writing tools (like `write` or `bash echo`) to create files inside `
 - **`plan/` directory**: Root artifact for `index.md` (master plan). All executive plans are
   point-in-time (default, no `--root`).
 - **`todo/` artifacts**: Always point-in-time (never use `--root`). Represent
-  informal deferred notes, not primary work items. Use `task` for tracked work.
+  deferred actions, QA checklists, or decision points auxiliary to a plan.
 - **`note/` artifacts**: Root-level by default (not nested under
   `<timestamp>-<hash>`). Represent spontaneous ideas and conversation anchors,
   not work items or discoveries. Supports subdirectory grouping for note
