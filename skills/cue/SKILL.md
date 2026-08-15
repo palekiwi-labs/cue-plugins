@@ -197,39 +197,6 @@ branch: [] # list of branch names where this task is being worked on
   with a `task`. If a `todo` represents standalone work beyond the task scope, elevate
   it to a `task` on master and mark the `todo` `closed`.
 
-### Cross-branch workflow
-
-Tasks stay on master throughout their lifetime. Feature branches reference
-tasks; they never copy them.
-
-When work begins on a feature branch:
-
-1. Set `status: in-progress` and add the branch name to the `branch:` list in
-   the master task file.
-2. Add a reference in the feature branch's `spec/index.md` or `plan/index.md`:
-   `Implements: task/<filename>.md`.
-3. When acceptance criteria are verified, set `status: complete`.
-
-Status updates are always made in place on the master task file, from any
-branch session. The `branch:` list is a historical record and is retained after
-completion.
-
-### Creating a task
-
-`cue-task` always writes to the master context directory (`.cue/master/task/`)
-regardless of the active task, by passing `--task master --root`
-internally. Context placement is not a caller decision — tasks always live on master.
-
-Task cards are stored **flat**: `.cue/master/task/<slug>.md` — no
-`<timestamp>-<hash>` subdirectory. The filename stem is the slug and the
-unique identity of the task. Slug rules:
-
-- Use lowercase kebab-case (e.g., `auth-login.md`).
-- No numeric IDs.
-- The slug `master` is reserved and will be rejected by `cue add`.
-
-**Create with:** `cue-task(filename: "auth-login.md", title: "...", content: "...")`
-
 ## The `plan` Artifact Type
 
 The `plan` type has two distinct uses determined by whether it is a root or point-in-time artifact:
