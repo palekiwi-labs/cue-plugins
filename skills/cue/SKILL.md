@@ -12,9 +12,9 @@ using the `cue` CLI tool and a dedicated `.cue/` directory structure.
 
 The system is organized around five altitudes:
 
-- **WHY** — `spec/`: stable project intent. Defines what should be true.
 - **WHAT** — `task/`: the primary unit of work and the kanban board card. Lives exclusively
   on the master branch. Moves through a lifecycle until its outcome is verified.
+- **WHY** — `spec/`: feature or project specification. Defines what should be true.
 - **HOW** — `plan/`: the technical approach. Always subordinate to a `task`. Contains step-by-step
   progress checkboxes.
 - **DEFER** — `todo/`: deferred actions, QA checklists, or decision points auxiliary to a
@@ -28,8 +28,9 @@ The system is organized around five altitudes:
 Markdown artifacts in `cue` use YAML frontmatter as the single source of truth
 for metadata.
 
+### Status (`status:`)
+
 `status` should be tracked with: `open|in-progress|complete|closed`.
-Type-specific enums are defined in each type section below.
 
 ### References (`refs:`)
 
@@ -46,10 +47,6 @@ refs:
 - Paths are relative to git root (project root)
 - Supply `refs:` whenever the artifact links to, derives from, or references
   another artifact. An artifact with no references simply omits the field.
-- The `cue-*` tools accept `refs` as an array of strings (default `[]`); a
-  non-empty array is emitted as the YAML list above automatically. The generic
-  `cue-add` tool accepts arrays via its `frontmatter` argument (e.g.
-  `{ refs: [".cue/master/spec/index.md"] }`).
 
 ## Directory Structure
 
@@ -62,105 +59,55 @@ If the `.cue/` directory is missing, run `cue init` to initialize the repository
 
 Root artifacts live directly at `.cue/<context>/<type>/<filename>` — they have no timestamp subdir.
 They are created with the `--root` flag and are intended for **stable, named documents** that are
-updated in place over the lifetime of the branch. A root document is the "anchor" of its type:
-it has a well-known path that other files, agents, and configs can reference reliably.
+updated in place over the lifetime of the branch.
 
 Typical root documents:
 
 - `spec/index.md`: The anchor document defining project scope, intent, and prerequisites.
-- `log.md` (context root): Cumulative history of findings and decisions (managed by `cue log`).
 - `spec/tickets/`: Source material for external reference (e.g., cached ticket text).
 - `plan/index.md`: The master plan translating project scope into a technical architecture and approach.
 
-**Create root artifacts with the `--root` flag:**
-`cue-plan(filename: "index.md", root: true, content: "...")`
-
-### Point-in-time artifacts (default)
+### Point-in-time artifacts
 
 By default (without `--root`), all artifacts are saved into a unique
 `.cue/<context>/<type>/<timestamp>-<hash>/` subdirectory. Each artifact is tied to a specific
 moment in git history, which allows correlation with commits and prevents conflicts when multiple
 sessions run in parallel.
 
-- `plan/<timestamp>-<hash>/<name>.md`: Executive plan for a specific session or implementation
-  slice. Step-by-step sequence of tasks. Must begin with a foreword.
-- `todo/<timestamp>-<hash>/<name>.md`: Deferred action items, QA checklists, or decision points
-  associated with a task.
-- `trace/<timestamp>-<hash>/<name>`: Artifacts tied to the current git state (error logs, analysis
-  results, code review output, audit trails).
+- `plan/<timestamp>-<hash>/<name>.md`: Executive plan for a specific implementation slice.
+- `trace/<timestamp>-<hash>/<name>`: Artifacts tied to the current git state (error logs, etc.)
 - `tmp/<timestamp>-<hash>/<name>`: Ephemeral per-session data not needed long-term.
 
 ## Active Context and Scope Resolution
 
 Every artifact write and read is scoped to a **context directory** under
 `.cue/`. The active context is determined by `.cue/HEAD` — a plain-text file
-containing the current task slug (or `master`). The git branch is **no longer**
-consulted for scope resolution.
+containing the currently default task slug (or `master`).
 
 ### Scope resolution precedence
 
 When a command needs to know which context to write to or read from, it resolves
 the scope in this order:
 
-1. **`--task <slug>` flag** — overrides the active context for a single
-   invocation **without** modifying `.cue/HEAD`. Available on `cue add` and
-   `cue log` (`add` and `list`). Use it to write to a different task's scope
-   without switching away from the current context.
-2. **`.cue/HEAD`** — when no `--task` flag is given, the scope is read from
-   `.cue/HEAD`. If the file is absent or empty, the scope defaults to `master`
-   (the global context).
-
-`master` is the **global context**: artifacts written there are shared across
-all tasks. Any other slug (e.g., `auth-login`) is a **task-scoped context**
-directory at `.cue/<slug>/`, auto-created by `cue switch`.
-
-### `.cue/HEAD` semantics
-
-- Absent, empty, or containing `master` → the global context (`master`) is
-  active.
-- Any other value → that task's context directory (`.cue/<slug>/`) is active.
-- Created by `cue switch`; read by every scoped command.
+1. **`--task <slug>` flag**
+2. **`.cue/HEAD`** — when no `--task` flag is given
 
 ### `cue switch <slug>`
 
-Switches the active context by writing the slug to `.cue/HEAD` and creating
-`.cue/<slug>/` if it does not exist.
+Switches the active context by writing the slug to `.cue/HEAD`
 
 ```sh
 cue switch auth-login                        # switch to the auth-login task
 cue switch master                            # return to the global context
-cue switch .cue/master/task/auth-login.md    # derive slug from the filename stem
-cue switch --branch feat/auth-login          # match a task by its branch: list
 ```
 
-`--branch <name>` scans task cards in `master/task/*.md` for one whose
-frontmatter `branch:` list contains `<name>`. If no match is found it prints a
-notice and falls back to `master` (a no-op switch).
-
-Add `--json` for machine-readable output:
-`{"context":"<slug>","global":false}` or `{"context":"master","global":true}`.
+Add `--json` for structured output.
 
 ### `cue status`
 
-Prints the active context. With a task active, it reads the matching task card
-(`master/task/<slug>.md`) for the title and status:
-
-```sh
-$ cue status
-active task: auth-login
-  title: Implement Login
-  status: in-progress
-  context: .cue/auth-login/
-
-$ cue status          # global context active
-active context: master (global)
-```
+Prints the active context.
 
 Add `--json` for structured output:
-
-- Global: `{"context":"master","global":true}`
-- Task: `{"context":"<slug>","global":false,"title":"...","status":"..."}`
-  (`title`/`status` are `null` when the card is absent or lacks the field).
 
 ## The `plan` Artifact Type
 
@@ -173,46 +120,21 @@ The `plan` type has two distinct uses determined by whether it is a root or poin
 The master plan is a living document that describes the full technical solution for the branch. It is
 created once and updated in place as the approach evolves. Contents include:
 
-- The problem being solved and constraints
-- Chosen architecture and approach (with alternatives considered)
-- Implementation phases and their scope
+- Chosen architecture and approach
 - Key design decisions
-
-Valid statuses for plans are:
-
-- `open`: The plan is in progress.
-- `complete`: All steps in the plan are finished.
-
-**Create with:** `cue-plan(filename: "index.md", root: true, content: "...")`
+- Implementation phases and their scope
 
 ### Executive Plan (point-in-time, default)
 
 **Path:** `plan/<timestamp>-<hash>/<name>.md`
 
 An executive plan is a session- or slice-specific document that translates a portion of the master
-plan into concrete, ordered steps. It is created at the start of a work session or sub-task and
-updated in place as steps are completed. Executive plans are retained after completion as a record
-of what was done and when.
+plan into concrete, ordered steps.
 
-Structure requirements:
+Requirements:
 
-1. **Foreword** (mandatory): A brief section explaining what this plan covers, which phase of the
-   master plan it addresses, and any prerequisites or context needed to execute it. This makes the
-   plan semi-self-contained for handoffs to sub-agents.
-2. **Steps**: An ordered sequence of `[ ]` checkbox tasks, with sufficient detail that a fresh agent
-   can execute them from the foreword alone.
-
-Executive plans also serve as the in-session task tracking mechanism. Use standard GFM checkboxes:
-`- [ ]` for pending steps and `- [x]` for completed ones. Update checkboxes with the `Edit` tool
-immediately after completing each step. Before editing, re-read the file to pick up any changes the
-user may have made directly.
-
-When all steps are complete, update the frontmatter `status` to `complete`.
-
-**Create with:** `cue-plan(filename: "slice1.md", content: "...")`
-
-The caller names the file. Choose names that are descriptive of the slice (e.g., `auth-wiring.md`,
-`phase-2-db.md`, `slice1.md`). Multiple executive plans can coexist in the same timestamped subdirectory.
+- **Link via `refs:`**: Executive plans link to their master plan (e.g. `.cue/master/plan/index.md`) via `refs:` frontmatter.
+- **Steps**: An ordered sequence of `[ ]` checkbox tasks with sufficient detail for an agent to execute step-by-step.
 
 ## The `task` Artifact Type
 
@@ -692,6 +614,7 @@ you write to:
 
 ### Frontmatter & Artifact Hygiene
 - **DO** use YAML frontmatter as the single source of truth for metadata (e.g., `status`, `priority`, `kind`, `parent`, `refs`).
+- **DO** update frontmatter `status` to `complete` when all steps in a plan are finished.
 - **DO** use specialized tools (`cue-plan`, `cue-task`, `cue-todo`, `cue-note`, `cue-add`) to create **new** artifacts.
 - **DO** use the `edit` tool to update **existing** artifacts.
 - **DON'T** prepend markdown headers like `# Status: complete` above or below frontmatter.
