@@ -18,6 +18,9 @@ const cueTaskTool = tool({
     kind: tool.schema.enum(["research", "design", "build", "review", "coord"]).optional().describe(
       "Task category classification (e.g. research, design, build, review, coord)"
     ),
+    parent: tool.schema.string().optional().describe(
+      "Parent task slug or path (e.g. 'parent-task-slug'). Emitted as `parent:` frontmatter."
+    ),
     refs: tool.schema.array(tool.schema.string()).default([]).describe(
       "Artifact paths (relative to .cue/) this task links to (e.g. the spec it implements). " +
       "Emitted as a `refs:` YAML list."
@@ -41,6 +44,9 @@ const cueTaskTool = tool({
       }
       if (args.kind) {
         frontmatter.kind = args.kind
+      }
+      if (args.parent) {
+        frontmatter.parent = args.parent
       }
       const fmFlags = frontmatterFlags(frontmatter)
 
