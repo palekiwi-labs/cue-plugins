@@ -85,8 +85,10 @@ Context scope determines where artifacts are read and written:
 
 ### `plan` (HOW)
 
+Tracks step-by-step progress using GFM checkboxes (`- [ ]` / `- [x]`).
+
 - **Master Plan (`plan/index.md`)**: Root document establishing overall architecture, phases, and design decisions.
-- **Executive Plan (`plan/<timestamp>-<hash>/<slice>.md`)**: Point-in-time slice linked to master plan via `parent: plan/index.md`. Tracks step-by-step progress using GFM checkboxes (`- [ ]` / `- [x]`).
+- **Executive Plan (`plan/<timestamp>-<hash>/<slice>.md`)**: Point-in-time slice linked to master plan via `parent: plan/index.md`.
 
 ### `todo` (DEFER)
 
@@ -100,10 +102,10 @@ Context scope determines where artifacts are read and written:
 
 ## Artifact Lifecycle Operations
 
-- **Creation**: Create new artifacts using available harness tools (`cue-add`, `cue-plan`, `cue-task`, `cue-todo`, `cue-note`) or CLI helpers (`cue add`).
-  - **Critical Note — Harness Tool Preference**: Always prefer harness-specific integration tools (`cue-*`) over raw shell CLI commands when creating artifacts. Passing text containing code snippets, symbols, quotes, or backticks directly as bash arguments frequently leads to shell escaping failures and corrupted files. Harness tools pass content safely via direct IPC/API parameters.
+- **Creation**: Create new artifacts using available harness tools (`cue-add`, `cue-plan`, `cue-task`, etc.) or CLI helpers (`cue add`).
+  - **Critical Note — Harness Tool Preference**: Always prefer harness-specific integration tools (`cue-*`) over raw shell CLI commands when creating artifacts. Passing text containing code snippets, symbols, quotes, or backticks directly as bash arguments frequently leads to shell escaping failures and corrupted files.
 - **Modification**: Update existing artifacts in-place using standard text editing tools (`edit`). Never use file overwrite tools that strip or corrupt YAML frontmatter.
-- **Querying & Discovery**: Discover artifacts exclusively using `cue list` (or harness query tools). **NEVER** use raw `grep` or `find` inside `.cue/`.
+- **Querying & Discovery**: Discover artifacts exclusively using `cue list` (or harness query tools).
 
 ## Querying & Discovery (`cue list`)
 
