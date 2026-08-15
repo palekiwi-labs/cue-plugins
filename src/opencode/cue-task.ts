@@ -15,6 +15,9 @@ const cueTaskTool = tool({
     priority: tool.schema.enum(["critical", "high", "normal", "low"]).optional().default("normal").describe(
       "Priority of the task"
     ),
+    kind: tool.schema.enum(["research", "design", "build", "review", "coord"]).optional().describe(
+      "Task category classification (e.g. research, design, build, review, coord)"
+    ),
     refs: tool.schema.array(tool.schema.string()).default([]).describe(
       "Artifact paths (relative to .cue/) this task links to (e.g. the spec it implements). " +
       "Emitted as a `refs:` YAML list."
@@ -35,6 +38,9 @@ const cueTaskTool = tool({
         status: args.status ?? "open",
         priority: args.priority ?? "normal",
         refs: args.refs,
+      }
+      if (args.kind) {
+        frontmatter.kind = args.kind
       }
       const fmFlags = frontmatterFlags(frontmatter)
 
