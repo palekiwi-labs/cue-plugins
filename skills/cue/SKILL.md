@@ -78,10 +78,9 @@ Context scope determines where artifacts are read and written:
 
 Agents operate under strict task context isolation to prevent race conditions and cross-task contamination during concurrent sessions:
 
-1. **Explicit Task Parameter Required**: Agents MUST explicitly pass `task: "<slug>"` on every cue tool call (`cue-add`, `cue-log`, `cue-plan`, etc.) and `--task <slug>` on CLI queries. Use `task: "master"` for global board operations.
-2. **Prohibition of `.cue/HEAD` Mutation**: `.cue/HEAD` is owned exclusively by the human operator. Agents are strictly prohibited from running `cue switch` or modifying `.cue/HEAD`.
-3. **Subagent Scope Propagation**: When delegating work to subagents via the `Task` tool (e.g., `@builder`, `@explore`), the primary agent MUST include the task scope directive in the subagent prompt:
-   > `Task scope: <slug>. Pass task: "<slug>" on all cue tool calls.`
+1. **Explicit Task Parameter Required**: Agents MUST explicitly specify task slug on every cue tool call (`cue-add`, `cue-log`, `cue-plan`, etc.) and `--task <slug>` on CLI queries.
+2. **Prohibition of `.cue/HEAD` Mutation**: `.cue/HEAD` is owned exclusively by the human operator.
+3. **Subagent Scope Propagation**: When delegating work to subagents, the primary agent MUST include the task scope directive in the subagent prompt.
 
 ## Artifact Contracts
 
