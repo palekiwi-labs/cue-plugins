@@ -70,9 +70,18 @@ Memory artifacts live in a context directory `.cue/<scope>/`, where `<scope>` is
 
 Context scope determines where artifacts are read and written:
 
-- **Active Context (`.cue/HEAD`)**: Plain-text file containing the active scope (`master` or task slug).
-- **Explicit Scope Override**: Operations can target a specific context scope without modifying `.cue/HEAD`.
+- **Active Context (`.cue/HEAD`)**: Plain-text file containing the active scope (`master` or task slug) used exclusively as a human interactive CLI and editor default.
+- **Explicit Scope Override**: Operations target a specific task context scope without modifying `.cue/HEAD`.
 - **Global Context (`master`)**: Cross-task shared artifacts. Tasks always reside on `master`.
+
+### Agent Task Context Rules
+
+Agents operate under strict task context isolation to prevent race conditions and cross-task contamination during concurrent sessions:
+
+1. **Explicit Task Parameter Required**: Agents MUST explicitly pass `task: "<slug>"` on every cue tool call (`cue-add`, `cue-log`, `cue-plan`, etc.) and `--task <slug>` on CLI queries. Use `task: "master"` for global board operations.
+2. **Prohibition of `.cue/HEAD` Mutation**: `.cue/HEAD` is owned exclusively by the human operator. Agents are strictly prohibited from running `cue switch` or modifying `.cue/HEAD`.
+3. **Subagent Scope Propagation**: When delegating work to subagents via the `Task` tool (e.g., `@builder`, `@explore`), the primary agent MUST include the task scope directive in the subagent prompt:
+   > `Task scope: <slug>. Pass task: "<slug>" on all cue tool calls.`
 
 ## Artifact Contracts
 
@@ -196,8 +205,10 @@ Always append a log entry immediately after making git commits, making important
 ### Execution & Git Discipline
 
 - **DO** discover and inspect artifacts using `cue list` instead of searching `.cue/` directly.
+- **DO** pass `task: "<slug>"` explicitly on all cue tool calls (`cue-add`, `cue-log`, `cue-plan`).
 - **DO** log milestones, decisions, and dead-ends immediately in `.cue/<context>/log.md`.
 - **DO** resolve all open task-scoped `todo` artifacts before marking a task complete.
+- **DON'T** run `cue switch` or mutate `.cue/HEAD` (owned exclusively by the human operator).
 - **DON'T** search `.cue/` directly with `grep` or `find` (use `cue list` to handle frontmatter and proxy stores).
 - **DON'T** include changes in `.cue/` in `git commit` commands.
 - **DON'T** fix unrelated out-of-scope issues during active task execution.

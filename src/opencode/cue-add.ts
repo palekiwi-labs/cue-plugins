@@ -34,9 +34,8 @@ const cueAddTool = tool({
       "A value may be a string or an array of strings; an array becomes a YAML list " +
       "(e.g. { refs: ['master/spec/index.md'] })."
     ),
-    task: tool.schema.string().optional().describe(
-      "Override active task scope for this invocation (without modifying .cue/HEAD). " +
-      "Use 'master' for the global context."
+    task: tool.schema.string().describe(
+      "Task scope for this invocation. Use 'master' for global context."
     ),
     dir: tool.schema.string().optional().describe(
       "Run cue as if started in this directory instead of the session directory. " +

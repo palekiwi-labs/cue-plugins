@@ -10,9 +10,8 @@ const cueLogTool = tool({
     found: tool.schema.array(tool.schema.string()).optional().describe("Findings discovered"),
     decided: tool.schema.array(tool.schema.string()).optional().describe("Decisions made"),
     open: tool.schema.array(tool.schema.string()).optional().describe("Remaining questions"),
-    task: tool.schema.string().optional().describe(
-      "Override active task scope for this invocation (without modifying .cue/HEAD). " +
-      "Use 'master' for the global context."
+    task: tool.schema.string().describe(
+      "Task scope for this invocation. Use 'master' for global context."
     ),
     dir: tool.schema.string().optional().describe(
       "Run cue as if started in this directory instead of the session directory. " +

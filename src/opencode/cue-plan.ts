@@ -21,9 +21,8 @@ const cuePlanTool = tool({
     refs: tool.schema.array(tool.schema.string()).default([]).describe(
       "Artifact paths (relative to .cue/) this plan links to. Emitted as a `refs:` YAML list."
     ),
-    task: tool.schema.string().optional().describe(
-      "Override active task scope for this invocation (without modifying .cue/HEAD). " +
-      "Use 'master' for the global context."
+    task: tool.schema.string().describe(
+      "Task scope for this invocation. Use 'master' for global context."
     ),
     dir: tool.schema.string().optional().describe(
       "Run cue as if started in this directory instead of the session directory. " +
