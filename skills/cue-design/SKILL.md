@@ -1,6 +1,8 @@
 ---
 name: cue-design
-description: Behavioural contract for cue tasks of kind design. Use when working on a task whose kind is design, when running a collaborative design or specification session, or when the user asks to discuss and refine an idea before building it.
+description: |
+  Use when working on a task whose kind is design, when running a collaborative design or specification session,
+  or when the user asks to discuss and refine an idea before building it.
 ---
 
 # Design Task Sessions (`kind: design`)
@@ -15,6 +17,8 @@ to commit to. It is a conversation, not a deliverable pipeline.
 - **Outputs**: A specification (`spec/index.md`), supporting reference
   documents (`doc/`), exploration notes (`note/`), deferred items
   (`todo/`), and milestone history (`log.md`).
+- **Boundaries**: Does not write feature code or create downstream
+  implementation task cards.
 
 ## Completion
 
@@ -56,41 +60,3 @@ produces.
   investigate or prototype, not to guess.
 - **Flag drift.** If the scope is growing, name it rather than following
   it.
-
-## Recording as You Go
-
-The conversation is lost at the end of the session; the artifacts are not.
-
-- Capture ideas and unresolved threads as `note/` artifacts.
-- Record findings, rejected alternatives and the reasoning behind
-  decisions with `cue-log`. A rejected option with its reason is worth as
-  much as the chosen one.
-- Put deferred decisions in `todo/` rather than leaving them implicit.
-
-## Boundaries
-
-- **Do not implement feature code.** A design task produces agreement and
-  specification.
-- **Do not provision other task contexts.** A design task does not create
-  implementation task cards or write into sibling task directories.
-  Decomposition into build work belongs to a later task that declares this
-  one as `parent:`.
-- **Do not batch-produce and finish.** Creating the task card sets up the
-  context the discussion is recorded into. It is not a signal to generate
-  deliverables and close.
-
-## Interaction Mode Precedence
-
-An explicit conversational cue from the user governs the session.
-
-If the user's instructions say to discuss, ask what you think, or present
-an idea for consideration, engage in dialogue. This outranks any
-procedural instruction from a command template or prior plan that would
-otherwise drive you toward producing artifacts.
-
-## Changing Kind Mid-Task
-
-A design task may become an implementation task when the design has
-converged and the remaining work is small and self-contained. Update
-`kind:` on the card and log the transition. Prefer a separate `build` task
-when the implementation is substantial.
