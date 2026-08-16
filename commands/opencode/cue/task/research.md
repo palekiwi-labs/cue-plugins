@@ -11,7 +11,7 @@ Load the `cue` and `cue-research` skills.
  - Analyze user instructions in `<user-instructions>` if present.
  - Infer a concise kebab-case slug (e.g. `eval-sqlite-options`), title, and task description.
  - Call `cue-task` to create the card with `kind: "research"` and `status: "in-progress"`.
- - Present the created card, follow the `cue-research` skill, and proceed with research.
+ - Report back with a concise summary of the created card and await instructions unless explicit instructions are provided in `<user-instructions>`.
 
 <user-instructions>
 $ARGUMENTS

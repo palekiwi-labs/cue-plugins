@@ -11,7 +11,7 @@ Load the `cue` and `cue-coord` skills.
  - Analyze user instructions in `<user-instructions>` if present.
  - Infer a concise kebab-case slug (e.g. `coord-v2-release`), title, and high-level acceptance criteria for cross-boundary alignment.
  - Call `cue-task` to create the card with `kind: "coord"` and `status: "in-progress"`.
- - Present the created card, follow the `cue-coord` skill, and proceed with coordination.
+ - Report back with a concise summary of the created card and await instructions unless explicit instructions are provided in `<user-instructions>`.
 
 <user-instructions>
 $ARGUMENTS
