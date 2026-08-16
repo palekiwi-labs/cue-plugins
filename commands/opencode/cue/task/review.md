@@ -8,7 +8,7 @@ PWD: !`pwd`
 
 !`cue status 2>/dev/null || echo "(cue status unavailable)"`
 
-Load the `cue`, `git-review-context`, `review-walkthrough`, and `git-commit` skills.
+Load the `cue`, `cue-review`, `git-review-context`, `review-walkthrough`, and `git-commit` skills.
 
 **Mandatory Instructions:**
 

@@ -93,7 +93,7 @@ Tasks declare operational expectations via `kind: research|design|build|review|c
 
 Progression flow: `research` -> `design` -> `build` -> `review` -> `coord` *(direct entry at `kind: build` supported for routine chores or bug fixes)*.
 
-For detailed operational guidelines and outputs per category, see `skills/cue/reference/task-kinds.md`.
+Each kind has a corresponding skill carrying its behavioural contract, expected outputs, and completion rule. When working on a task, load the skill matching its kind: `cue-research`, `cue-design`, `cue-build`, `cue-review`, or `cue-coord`.
 
 ### `spec` (WHY)
 

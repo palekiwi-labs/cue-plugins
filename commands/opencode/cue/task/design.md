@@ -1,5 +1,5 @@
 ---
-description: Infer and create a new cue design task (kind: design) for specification and context setup
+description: Infer and create a new cue design task (kind: design) and open a collaborative design session
 ---
 
 PWD: !`pwd`
@@ -8,20 +8,20 @@ PWD: !`pwd`
 
 !`cue status 2>/dev/null || echo "(cue status unavailable)"`
 
-Load the `cue` and `git-commit` skills.
+Load the `cue`, `cue-design`, and `git-commit` skills.
 
 **Mandatory Instructions:**
 
-1. **Infer and Create Cue Design Task:**
-   - Analyze user instructions in `<user-instructions>` alongside current project context.
-   - Infer a concise kebab-case slug (e.g. `design-auth-flow`), title, description, and actionable acceptance criteria focused on feature specification and context setup.
-   - Call `cue-task` to create the card with `kind: "design"` and `status: "in-progress"`.
+1. **Create the design task container:**
+   - Analyse the user instructions in `<user-instructions>` alongside the project context above.
+   - Infer a concise kebab-case slug (e.g. `design-auth-flow`), a title, and a problem statement. Acceptance criteria are provisional at this stage and will be refined through the session.
+   - Include in the acceptance criteria that the task is complete only when the user and the agent explicitly agree the design has converged, and that producing a specification does not constitute completion.
+   - Call `cue-task` with `kind: "design"` and `status: "in-progress"`.
+   - The card exists to give the discussion a context scope to record into and to make the session recoverable later. It is not a signal to begin producing deliverables.
 
-2. **Execution Guidelines (`kind: design`):**
-   - Translate requirements and research into structured feature specifications (`spec/index.md`).
-   - Define project boundaries, architectural expectations, and acceptance criteria without implementing feature code.
-   - Expected outputs: feature specifications (`spec/`), initialized implementation task cards (`.cue/master/task/`), and reference documents (`doc/` or `trace/`).
-   - Design task completes when the spec and implementation context are fully provisioned. Present a concise summary and proceed with design execution.
+2. **Open the session:**
+   - Present the created card, then follow the `cue-design` skill.
+   - Do not draft a specification in this turn.
 
 <user-instructions>
 $ARGUMENTS
