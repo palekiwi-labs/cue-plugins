@@ -3,6 +3,15 @@ import { join } from "node:path"
 import { tmpdir } from "node:os"
 import { frontmatterFlags } from "./frontmatter"
 
+const ROOT_DEFAULT_TYPES = new Set(["spec", "note", "doc", "plan"])
+
+export function shouldUseRoot(type: string, root?: boolean): boolean {
+  if (typeof root === "boolean") {
+    return root
+  }
+  return ROOT_DEFAULT_TYPES.has(type)
+}
+
 const cueAddTool = tool({
   description: "Create a new cue artifact (spec, doc, trace, etc.).",
   args: {
@@ -15,7 +24,7 @@ const cueAddTool = tool({
     root: tool.schema.boolean().optional().describe(
       "When true, saves flat at <type>/<filename> — the root of the type directory. " +
       "Use for stable anchor documents that are updated in place. " +
-      "Default is false (nested under <type>/<timestamp>-<hash>/)."
+      "Default is type-aware: true for spec, note, doc, plan; false for todo, trace, tmp."
     ),
     frontmatter: tool.schema.record(
       tool.schema.string(),
@@ -42,7 +51,8 @@ const cueAddTool = tool({
 
       // 2. Tell cue to read from that file (Safe, content is not a CLI arg)
       const dirFlag = args.dir ? ["--dir", args.dir] : []
-      const rootFlag = args.root ? ["--root"] : []
+      const isRoot = shouldUseRoot(args.type, args.root)
+      const rootFlag = isRoot ? ["--root"] : []
       const taskFlag = args.task ? ["--task", args.task] : []
       const fmFlags = args.frontmatter ? frontmatterFlags(args.frontmatter) : []
 

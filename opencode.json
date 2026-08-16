@@ -5,9 +5,7 @@
     "./src/opencode/cue-add.ts",
     "./src/opencode/cue-log.ts",
     "./src/opencode/cue-plan.ts",
-    "./src/opencode/cue-task.ts",
-    "./src/opencode/cue-todo.ts",
-    "./src/opencode/cue-note.ts"
+    "./src/opencode/cue-task.ts"
   ],
   "skills": {
     "paths": ["./skills/"]
