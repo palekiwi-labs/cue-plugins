@@ -1,6 +1,8 @@
 ---
 name: cue-research
-description: Use when working on a research task, or when performing technical exploration and investigation in any session.
+description: |
+  Use when working on a research task, or when performing technical exploration
+  and investigation in any session.
 ---
 
 # Research Sessions & Exploration
@@ -20,17 +22,11 @@ specifications.
   - **Durable Documentation (`doc/`)**: Synthesized findings, trade-off
     analyses, architecture reference, tool/crate evaluations, and decision
     context.
-  - **Milestone History (`log.md`)**: Structured progress and key findings
-    log entries.
 
 ### When to Use `trace/` vs `doc/`
 
 - **`trace/` — Raw Evidence & Observations**:
   - Point-in-time snapshots captured during active discovery
-    (`trace/<timestamp>-<hash>/...`).
-  - Preserves unedited CLI outputs, benchmark runs, test failures, or
-    step-by-step reproduction logs without delaying investigation to format
-    or polish them.
 - **`doc/` — Synthesized & Durable Knowledge**:
   - Stable, structured reference documents (`doc/<name>.md`).
   - Distills raw traces and learnings into durable knowledge (e.g.,
