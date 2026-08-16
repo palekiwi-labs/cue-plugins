@@ -1,9 +1,12 @@
 ---
 name: cue-coord
-description: Behavioural contract for cue tasks of kind coord. Use when working on a task whose kind is coord, or when orchestrating work that spans multiple repositories, modules or child tasks and needs end-to-end integration verified.
+description: |
+  Use when working on a task whose kind is coord, or when orchestrating work
+  that spans multiple repositories, modules or child tasks and needs end-to-end
+  integration verified.
 ---
 
-# Coordination Task Sessions (`kind: coord`)
+# Coordination Task Sessions
 
 A coordination task supervises work that crosses a boundary.
 

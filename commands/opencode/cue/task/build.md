@@ -6,7 +6,7 @@ PWD: !`pwd`
 
 !`$HOME/.config/opencode/scripts/git-context.sh`
 
-Load the `cue` and `cue-build` skills.
+Load the `cue`, `cue-build`, `git-commit` and `tdd` skills.
 
 **Mandatory Instructions:**
 

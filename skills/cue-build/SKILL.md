@@ -1,9 +1,11 @@
 ---
 name: cue-build
-description: Behavioural contract for cue tasks of kind build. Use when working on a task whose kind is build, or when implementing features, fixing bugs, writing tests, and executing an implementation plan.
+description: |
+  Use when working on a task whose kind is build, or executing an implementation
+  plan.
 ---
 
-# Build Task Sessions (`kind: build`)
+# Build Task Sessions
 
 A build task delivers working, verified code.
 

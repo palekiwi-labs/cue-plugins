@@ -1,9 +1,9 @@
 ---
 name: cue-research
-description: Behavioural contract for cue tasks of kind research. Use when working on a task whose kind is research, or when exploring options, evaluating tools and dependencies, testing hypotheses, or answering technical unknowns before committing to a design.
+description: Use when working on a task whose kind is research.
 ---
 
-# Research Task Sessions (`kind: research`)
+# Research Task Sessions
 
 A research task answers open questions. It produces knowledge, not code
 and not specifications.

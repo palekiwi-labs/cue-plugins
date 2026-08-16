@@ -1,9 +1,9 @@
 ---
 name: cue-review
-description: Behavioural contract for cue tasks of kind review. Use when working on a task whose kind is review, or when inspecting diffs, evaluating code quality, recording review feedback, and verifying that review fixes hold.
+description: Use when working on a task whose kind is review.
 ---
 
-# Review Task Sessions (`kind: review`)
+# Review Task Sessions
 
 A review task evaluates work it did not produce.
 
