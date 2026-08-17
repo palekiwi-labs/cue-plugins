@@ -16,6 +16,19 @@ A build task delivers working, verified code.
 - **Outputs**: Code changes, passing tests, executive plans (`plan/`),
   deferred items (`todo/`), and milestone history (`log.md`).
 
+## Acceptance Criteria & Manual QA
+
+When defining or executing acceptance criteria for a build task, evaluate
+whether manual QA testing by a human operator is required alongside automated
+tests.
+
+- **Manual QA Criteria**: For user-facing features, CLI UX, editor plugins, or
+  interactive tools, include manual QA in acceptance criteria (e.g., `Manual
+  QA: User verifies flag in interactive shell`).
+- **Evidence Attestation**: Never fill human-attested evidence autonomously.
+  Await explicit user attestation before marking a manual QA criterion as
+  passed.
+
 ## Completion
 
 A build task is complete when every acceptance criterion on the card is

@@ -189,6 +189,7 @@ Always append a log entry immediately after making git commits, making important
 ### Task & Spec Content
 
 - **DO** write outcome-oriented acceptance criteria ("tests pass") with evidence requirements.
+- **DO** evaluate whether build tasks require a manual QA step in acceptance criteria alongside automated tests.
 - **DO** keep `spec/index.md` focused purely on scope and project intent.
 - **DON'T** include technical analysis, implementation details, or code snippets in `spec/index.md`.
 - **DON'T** use GFM checkboxes in acceptance criteria (checkboxes belong in executive plans or `todo` checklists).
