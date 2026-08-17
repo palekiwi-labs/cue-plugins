@@ -29,16 +29,10 @@ tests.
   Await explicit user attestation before marking a manual QA criterion as
   passed.
 
-## Completion
-
-A build task is complete when every acceptance criterion on the card is
-satisfied with evidence, and all task-scoped `todo` artifacts are resolved.
-
 ## Boundaries
 
 - Implement the requested scope only. Capture out-of-scope discoveries as
   `todo` or `note` artifacts.
-- Never include `.cue/` changes in a commit.
 
 <!-- Placeholder. Extend with behavioural guidance as this kind is
 exercised in practice. -->

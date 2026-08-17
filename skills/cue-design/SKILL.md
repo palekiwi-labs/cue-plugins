@@ -29,9 +29,6 @@ design has converged.
 Producing a specification does not complete the task. Neither does running
 out of questions. Ask; do not assume.
 
-State this rule in the task card's acceptance criteria when creating a
-design task, so a later session inherits it without needing this skill.
-
 ## The Specification Is the Working Surface
 
 `spec/index.md` is what the discussion is conducted on, not what it

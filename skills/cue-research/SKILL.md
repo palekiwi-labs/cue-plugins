@@ -65,13 +65,7 @@ codebases evolve.
   target questions, delegating focused sub-tasks to sub-agents, and
   gathering summaries for final synthesis.
 
-## Completion
-
-A research task or phase is complete when the target questions have been
-answered with evidence, or established as unanswerable by research alone.
-
 ## Boundaries
 
 - Do not write feature implementation code.
-- Do not draft target repository specifications (`spec/index.md`). That is a
-  design task.
+- Do not draft target repository specifications.

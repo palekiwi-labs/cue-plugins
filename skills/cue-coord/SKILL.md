@@ -10,19 +10,6 @@ description: |
 
 A coordination task supervises work that crosses a boundary.
 
-## Purpose and Outputs
-
-- **Purpose**: Oversee initiatives spanning multiple repositories or
-  modules, define and track child tasks, and enforce contracts between
-  them.
-- **Outputs**: Child task cards (`.cue/master/task/`), cross-boundary
-  verification records, and milestone history (`log.md`).
-
-## Completion
-
-A coordination task is complete when all child tasks are complete and
-end-to-end integration has been verified.
-
 ## Boundaries
 
 - Unlike other kinds, a coordination task may create child task contexts.

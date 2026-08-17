@@ -14,11 +14,6 @@ A review task evaluates work it did not produce.
 - **Outputs**: Review traces (`trace/`), anti-pattern reference documents
   (`doc/`), and milestone history (`log.md`).
 
-## Completion
-
-A review task is complete when every finding has been recorded and either
-resolved, deferred to a `todo`, or explicitly accepted.
-
 ## Boundaries
 
 - Operates separately from `build` to avoid self-review bias.
