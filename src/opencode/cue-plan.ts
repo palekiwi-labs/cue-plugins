@@ -1,8 +1,21 @@
 import { type Plugin, tool } from "@opencode-ai/plugin"
-import { join } from "node:path"
-import { tmpdir } from "node:os"
+import { isAbsolute, join, resolve } from "node:path"
+import { homedir, tmpdir } from "node:os"
 import { frontmatterFlags } from "./frontmatter"
-import { resolveDir } from "./dir"
+
+function resolveDir(dir: string | undefined, cwd: string): string[] {
+  if (!dir) {
+    return []
+  }
+  let expanded = dir
+  if (expanded.startsWith("~/") || expanded === "~") {
+    expanded = homedir() + expanded.slice(1)
+  }
+  if (isAbsolute(expanded)) {
+    return ["--dir", expanded]
+  }
+  return ["--dir", resolve(cwd, expanded)]
+}
 
 const cuePlanTool = tool({
   description: "Create a new plan artifact.",
