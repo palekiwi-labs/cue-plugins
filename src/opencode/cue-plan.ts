@@ -2,6 +2,7 @@ import { type Plugin, tool } from "@opencode-ai/plugin"
 import { join } from "node:path"
 import { tmpdir } from "node:os"
 import { frontmatterFlags } from "./frontmatter"
+import { resolveDir } from "./dir"
 
 const cuePlanTool = tool({
   description: "Create a new plan artifact.",
@@ -34,7 +35,7 @@ const cuePlanTool = tool({
     try {
       await Bun.write(tempPath, args.content)
 
-      const dirFlag = args.dir ? ["--dir", args.dir] : []
+      const dirFlag = resolveDir(args.dir, context.directory)
       const taskFlag = args.task ? ["--task", args.task] : []
       const rootFlag = args.root ? ["--root"] : []
       const frontmatter: Record<string, string | string[]> = {

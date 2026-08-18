@@ -2,6 +2,7 @@ import { type Plugin, tool } from "@opencode-ai/plugin"
 import { join } from "node:path"
 import { tmpdir } from "node:os"
 import { frontmatterFlags } from "./frontmatter"
+import { resolveDir } from "./dir"
 
 const cueTaskTool = tool({
   description: "Create a new task artifact (kanban board card). Always saved to the master branch.",
@@ -35,7 +36,7 @@ const cueTaskTool = tool({
     try {
       await Bun.write(tempPath, args.content)
 
-      const dirFlag = args.dir ? ["--dir", args.dir] : []
+      const dirFlag = resolveDir(args.dir, context.directory)
       const frontmatter: Record<string, string | string[]> = {
         title: args.title,
         status: args.status ?? "open",

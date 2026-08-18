@@ -2,6 +2,7 @@ import { type Plugin, tool } from "@opencode-ai/plugin"
 import { join } from "node:path"
 import { tmpdir } from "node:os"
 import { frontmatterFlags } from "./frontmatter"
+import { resolveDir } from "./dir"
 
 const ROOT_DEFAULT_TYPES = new Set(["spec", "note", "doc", "plan"])
 
@@ -49,7 +50,7 @@ const cueAddTool = tool({
       await Bun.write(tempPath, args.content)
 
       // 2. Tell cue to read from that file (Safe, content is not a CLI arg)
-      const dirFlag = args.dir ? ["--dir", args.dir] : []
+      const dirFlag = resolveDir(args.dir, context.directory)
       const isRoot = shouldUseRoot(args.type, args.root)
       const rootFlag = isRoot ? ["--root"] : []
       const taskFlag = args.task ? ["--task", args.task] : []

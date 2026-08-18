@@ -1,6 +1,7 @@
 import { type Plugin, tool } from "@opencode-ai/plugin"
 import { join } from "node:path"
 import { tmpdir } from "node:os"
+import { resolveDir } from "./dir"
 
 const cueLogTool = tool({
   description: "Add a structured log entry to the memory system.",
@@ -32,7 +33,7 @@ const cueLogTool = tool({
 
     try {
       await Bun.write(tempPath, JSON.stringify(payload))
-      const dirFlag = args.dir ? ["--dir", args.dir] : []
+      const dirFlag = resolveDir(args.dir, context.directory)
       const taskFlag = args.task ? ["--task", args.task] : []
       await Bun.$`cue log add ${dirFlag} ${taskFlag} --file ${tempPath}`.cwd(context.directory).quiet()
       return `Logged milestone: ${args.title}`
