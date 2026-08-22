@@ -86,8 +86,8 @@ Agents operate under strict task context isolation to prevent race conditions an
 
 ### `task` (WHAT)
 
-- Primary unit of work; lives exclusively at `.cue/master/task/<slug>.md`.
-- Contains acceptance criteria detailing verified outcomes and required evidence.
+- Primary unit of work and context anchor; lives exclusively at `.cue/master/task/<slug>.md`.
+- Contains high-level description, problem statement, or initiative context.
 - Tracked on master across feature branches via `branch:` frontmatter list.
 
 #### Task Categories (`kind:`)
@@ -188,12 +188,9 @@ Always append a log entry immediately after making git commits, making important
 
 ### Task & Spec Content
 
-- **DO** write outcome-oriented acceptance criteria ("tests pass") with evidence requirements.
-- **DO** evaluate whether build tasks require a manual QA step in acceptance criteria alongside automated tests.
+- **DO** keep `task/<slug>.md` concise, focusing on problem context and objectives.
 - **DO** keep `spec/index.md` focused purely on scope and project intent.
 - **DON'T** include technical analysis, implementation details, or code snippets in `spec/index.md`.
-- **DON'T** use GFM checkboxes in acceptance criteria (checkboxes belong in executive plans or `todo` checklists).
-- **DON'T** fill human-attested evidence without explicit user confirmation.
 
 ### Task Placement & Hierarchy
 

@@ -21,7 +21,7 @@ const cueTaskTool = tool({
   description: "Create a new task artifact (kanban board card). Always saved to the master branch.",
   args: {
     filename: tool.schema.string().describe("Slug-based name (e.g., 'auth-login.md'). No numeric ID."),
-    content: tool.schema.string().describe("Full body of the task, including the Acceptance Criteria table."),
+    content: tool.schema.string().describe("Full body of the task describing the problem, initiative, or summary."),
     title: tool.schema.string().describe("Short display title for the board."),
     status: tool.schema.enum(["open", "in-progress", "complete", "closed"]).optional().default("open").describe(
       "Status of the task"

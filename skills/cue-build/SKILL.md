@@ -16,18 +16,12 @@ A build task delivers working, verified code.
 - **Outputs**: Code changes, passing tests, executive plans (`plan/`),
   deferred items (`todo/`), and milestone history (`log.md`).
 
-## Acceptance Criteria & Manual QA
+## Verification & Manual QA
 
-When defining or executing acceptance criteria for a build task, evaluate
-whether manual QA testing by a human operator is required alongside automated
-tests.
+Implementation outcomes are verified against the agreed specification (`spec/index.md`) or executive plan (`plan/`).
 
-- **Manual QA Criteria**: For user-facing features, CLI UX, editor plugins, or
-  interactive tools, include manual QA in acceptance criteria (e.g., `Manual
-  QA: User verifies flag in interactive shell`).
-- **Evidence Attestation**: Never fill human-attested evidence autonomously.
-  Await explicit user attestation before marking a manual QA criterion as
-  passed.
+- **Automated & Manual Verification**: For user-facing features, CLI UX, editor plugins, or interactive tools, evaluate whether manual verification by a human operator is appropriate alongside automated tests.
+- **Human Attestation**: Never assume or fabricate human-attested verification steps autonomously. Await explicit user confirmation before marking human-verified steps complete.
 
 ## Boundaries
 
