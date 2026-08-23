@@ -29,8 +29,8 @@ const cueTaskTool = tool({
     priority: tool.schema.enum(["critical", "high", "normal", "low"]).optional().default("normal").describe(
       "Priority of the task"
     ),
-    kind: tool.schema.enum(["research", "design", "build", "review", "coord"]).optional().describe(
-      "Task category classification (e.g. research, design, build, review, coord)"
+    kind: tool.schema.enum(["research", "design", "build", "review", "coord", "learn"]).optional().describe(
+      "Task category classification (e.g. research, design, build, review, coord, learn)"
     ),
     parent: tool.schema.string().optional().describe(
       "Parent task slug or path (e.g. 'parent-task-slug'). Emitted as `parent:` frontmatter."

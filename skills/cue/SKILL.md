@@ -11,11 +11,11 @@ This skill provides a structured protocol for managing context and continuity ac
 
 The system is organized around five altitudes:
 
-- **WHAT** — `task/`: the primary unit of work and kanban board card. Lives exclusively on the master branch.
-- **WHY** — `spec/`: feature or project specification. Defines what should be true.
-- **HOW** — `plan/`: technical approach. Subordinate to a `task`. Contains step-by-step progress checkboxes.
-- **DEFER** — `todo/`: deferred actions, QA checklists, or decision points auxiliary to a `task` or `plan`. Must be resolved before task completion.
-- **THINK** — `note/`: spontaneous idea capture and conversation anchors. Thoughts outside active work waiting to be examined. Dissolves into its outcome artifact once addressed.
+- **WHAT** - `task/`: the primary unit of work and kanban board card. Lives exclusively on the master branch.
+- **WHY** - `spec/`: feature or project specification. Defines what should be true.
+- **HOW** - `plan/`: technical approach. Subordinate to a `task`. Contains step-by-step progress checkboxes.
+- **DEFER** - `todo/`: deferred actions, QA checklists, or decision points auxiliary to a `task` or `plan`. Must be resolved before task completion.
+- **THINK** - `note/`: spontaneous idea capture and conversation anchors. Thoughts outside active work waiting to be examined. Dissolves into its outcome artifact once addressed.
 
 ## Frontmatter Management
 
@@ -31,7 +31,7 @@ Bounded priority classification: `priority: critical|high|normal|low`.
 
 ### `kind:`
 
-Task category classification: `kind: research|design|build|review|coord` (see `task` contract below).
+Task category classification: `kind: research|design|build|review|coord|learn` (see `task` contract below).
 
 ### `parent:`
 
@@ -70,17 +70,26 @@ Memory artifacts live in a context directory `.cue/<scope>/`, where `<scope>` is
 
 Context scope determines where artifacts are read and written:
 
-- **Active Context (`.cue/HEAD`)**: Plain-text file containing the active scope (`master` or task slug) used exclusively as a human interactive CLI and editor default.
-- **Explicit Scope Override**: Operations target a specific task context scope without modifying `.cue/HEAD`.
-- **Global Context (`master`)**: Cross-task shared artifacts. Tasks always reside on `master`.
+- **Active Context (`.cue/HEAD`)**: Plain-text file containing the active scope
+  (`master` or task slug) used exclusively as a human interactive CLI and editor
+  default.
+- **Explicit Scope Override**: Operations target a specific task context scope
+  without modifying `.cue/HEAD`.
+- **Global Context (`master`)**: Cross-task shared artifacts. Tasks always
+  reside on `master`.
 
 ### Agent Task Context Rules
 
-Agents operate under strict task context isolation to prevent race conditions and cross-task contamination during concurrent sessions:
+Agents operate under strict task context isolation to prevent race conditions
+and cross-task contamination during concurrent sessions:
 
-1. **Explicit Task Parameter Required**: Agents MUST explicitly specify task slug on every cue tool call (`cue-add`, `cue-log`, `cue-plan`, etc.) and `--task <slug>` on CLI queries.
-2. **Prohibition of `.cue/HEAD` Mutation**: `.cue/HEAD` is owned exclusively by the human operator.
-3. **Subagent Scope Propagation**: When delegating work to subagents, the primary agent MUST include the task scope directive in the subagent prompt.
+1. **Explicit Task Parameter Required**: Agents MUST explicitly specify task
+   slug on every cue tool call (`cue-add`, `cue-log`, `cue-plan`, etc.) and
+   `--task <slug>` on CLI queries.
+2. **Prohibition of `.cue/HEAD` Mutation**: `.cue/HEAD` is owned exclusively by
+   the human operator.
+3. **Subagent Scope Propagation**: When delegating work to subagents, the
+   primary agent MUST include the task scope directive in the subagent prompt.
 
 ## Artifact Contracts
 
@@ -92,45 +101,62 @@ Agents operate under strict task context isolation to prevent race conditions an
 
 #### Task Categories (`kind:`)
 
-Tasks declare operational expectations via `kind: research|design|build|review|coord`:
+Tasks declare operational expectations via `kind: research|design|build|review|coord|learn`:
+
 - **`kind: research`**: Exploration & feasibility analysis.
 - **`kind: design`**: Specification & context setup.
 - **`kind: build`**: Feature implementation & test execution.
 - **`kind: review`**: Code review & evaluation trace generation.
 - **`kind: coord`**: Multi-component or cross-repository orchestration.
+- **`kind: learn`**: Tutoring & capability growth for the user.
 
-Progression flow: `research` -> `design` -> `build` -> `review` -> `coord` *(direct entry at `kind: build` supported for routine chores or bug fixes)*.
-
-Each kind has a corresponding skill carrying its behavioural contract, expected outputs, and completion rule. When working on a task, load the skill matching its kind: `cue-research`, `cue-design`, `cue-build`, `cue-review`, or `cue-coord`.
+Each kind has a corresponding skill carrying its behavioural contract, expected
+outputs, and completion rule. When working on a task, load the skill matching
+its kind: `cue-research`, `cue-design`, `cue-build`, `cue-review`, `cue-coord`,
+or `cue-learn`.
 
 ### `spec` (WHY)
 
 - Captures intent, scope, and requirements.
-- Lives at `.cue/<context>/spec/index.md` (root). Does not contain technical implementation details or code snippets.
+- Lives at `.cue/<context>/spec/index.md` (root). Does not contain technical
+  implementation details or code snippets.
 
 ### `plan` (HOW)
 
 Tracks step-by-step progress using GFM checkboxes (`- [ ]` / `- [x]`).
 
-- **Master Plan (`plan/index.md`)**: Root document establishing overall architecture, phases, and design decisions.
-- **Executive Plan (`plan/<timestamp>-<hash>/<slice>.md`)**: Point-in-time slice linked to master plan via `parent: plan/index.md`.
+- **Master Plan (`plan/index.md`)**: Root document establishing overall
+  architecture, phases, and design decisions.
+- **Executive Plan (`plan/<timestamp>-<hash>/<slice>.md`)**: Point-in-time slice
+  linked to master plan via `parent: plan/index.md`.
 
 ### `todo` (DEFER)
 
-- Point-in-time auxiliary container for deferred items, QA checklists, and decision points tied to execution.
-- Must be resolved (`complete` or `closed`) before the parent task is marked complete. Standalone work should be elevated to a `task` on master.
+- Point-in-time auxiliary container for deferred items, QA checklists, and
+  decision points tied to execution.
+- Must be resolved (`complete` or `closed`) before the parent task is marked
+  complete. Standalone work should be elevated to a `task` on master.
 
 ### `note` (THINK)
 
 - Root-level exploration anchors (`note/<name>.md` or `note/<thread>/index.md`).
-- No `priority` field. Transitions `open` -> `in-progress` -> `closed`. When addressed, content migrates to a `task`, `spec`, or `doc`, and the note is `closed`.
+- No `priority` field. Transitions `open` -> `in-progress` -> `closed`. When
+  addressed, content migrates to a `task`, `spec`, or `doc`, and the note is
+  `closed`.
 
 ## Artifact Lifecycle Operations
 
-- **Creation**: Create new artifacts using available harness tools (`cue-add`, `cue-plan`, `cue-task`, etc.) or CLI helpers (`cue add`).
-  - **Critical Note — Harness Tool Preference**: Always prefer harness-specific integration tools (`cue-*`) over raw shell CLI commands when creating artifacts. Passing text containing code snippets, symbols, quotes, or backticks directly as bash arguments frequently leads to shell escaping failures and corrupted files.
-- **Modification**: Update existing artifacts in-place using standard text editing tools (`edit`). Never use file overwrite tools that strip or corrupt YAML frontmatter.
-- **Querying & Discovery**: Discover artifacts exclusively using `cue list` (or harness query tools).
+- **Creation**: Create new artifacts using available harness tools (`cue-add`,
+  `cue-plan`, `cue-task`, etc.) or CLI helpers (`cue add`).
+- **Critical Note - Harness Tool Preference**: Always prefer harness-specific
+  integration tools (`cue-*`) over raw shell CLI commands when creating artifacts.
+  Passing text containing code snippets, symbols, quotes, or backticks directly as
+  bash arguments frequently leads to shell escaping failures and corrupted files.
+- **Modification**: Update existing artifacts in-place using standard text
+  editing tools (`edit`). Never use file overwrite tools that strip or corrupt
+  YAML frontmatter.
+- **Querying & Discovery**: Discover artifacts exclusively using `cue list` (or
+  harness query tools).
 
 ## Querying & Discovery (`cue list`)
 
