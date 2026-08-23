@@ -12,13 +12,18 @@
  * This is field-agnostic: any key can be scalar or list.
  */
 export function frontmatterFlags(
-  fm: Record<string, string | string[]>,
+  fm: Record<string, string | string[] | undefined | null>,
 ): string[] {
   const flags: string[] = []
   for (const [k, v] of Object.entries(fm)) {
+    if (v === undefined || v === null) {
+      continue
+    }
     if (Array.isArray(v)) {
       for (const el of v) {
-        flags.push("--frontmatter", `${k}=${el}`)
+        if (el !== undefined && el !== null) {
+          flags.push("--frontmatter", `${k}=${el}`)
+        }
       }
     } else {
       flags.push("--frontmatter", `${k}=${v}`)

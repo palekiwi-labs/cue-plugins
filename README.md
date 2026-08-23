@@ -22,8 +22,7 @@ Add the following to your `opencode.json` configuration file (replace `<your-use
     "/home/<your-username>/.config/opencode/plugin/palekiwi-labs/cue-plugins/src/opencode/cue-add.ts",
     "/home/<your-username>/.config/opencode/plugin/palekiwi-labs/cue-plugins/src/opencode/cue-log.ts",
     "/home/<your-username>/.config/opencode/plugin/palekiwi-labs/cue-plugins/src/opencode/cue-plan.ts",
-    "/home/<your-username>/.config/opencode/plugin/palekiwi-labs/cue-plugins/src/opencode/cue-task.ts",
-    "/home/<your-username>/.config/opencode/plugin/palekiwi-labs/cue-plugins/src/opencode/cue-todo.ts"
+    "/home/<your-username>/.config/opencode/plugin/palekiwi-labs/cue-plugins/src/opencode/cue-task.ts"
   ],
   "skills": {
     "paths": ["/home/<your-username>/.config/opencode/plugin/palekiwi-labs/cue-plugins/skills/"]
@@ -33,11 +32,10 @@ Add the following to your `opencode.json` configuration file (replace `<your-use
 
 ## Available Tools
 
-- **cue-add**: Generic tool to create any cue artifact.
+- **cue-add**: Generic tool to create any cue artifact (spec, note, doc, todo, trace, tmp).
 - **cue-log**: Record milestones, decisions, and discoveries.
 - **cue-plan**: Create technical plans and executive slices.
 - **cue-task**: Manage kanban tasks on the master branch.
-- **cue-todo**: Capture informal deferred notes.
 - **acuity-plugin**: Forwards agent lifecycle events (session idle, agent
   turns, tool calls) to an [acuity](https://github.com/palekiwi-labs/cue/blob/master/docs/acuity.md)
   observability server. Acuity is the ingestion component of the cue

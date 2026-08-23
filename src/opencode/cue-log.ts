@@ -1,6 +1,20 @@
 import { type Plugin, tool } from "@opencode-ai/plugin"
-import { join } from "node:path"
-import { tmpdir } from "node:os"
+import { isAbsolute, join, resolve } from "node:path"
+import { homedir, tmpdir } from "node:os"
+
+function resolveDir(dir: string | undefined, cwd: string): string[] {
+  if (!dir) {
+    return []
+  }
+  let expanded = dir
+  if (expanded.startsWith("~/") || expanded === "~") {
+    expanded = homedir() + expanded.slice(1)
+  }
+  if (isAbsolute(expanded)) {
+    return ["--dir", expanded]
+  }
+  return ["--dir", resolve(cwd, expanded)]
+}
 
 const cueLogTool = tool({
   description: "Add a structured log entry to the memory system.",
@@ -10,9 +24,8 @@ const cueLogTool = tool({
     found: tool.schema.array(tool.schema.string()).optional().describe("Findings discovered"),
     decided: tool.schema.array(tool.schema.string()).optional().describe("Decisions made"),
     open: tool.schema.array(tool.schema.string()).optional().describe("Remaining questions"),
-    task: tool.schema.string().optional().describe(
-      "Override active task scope for this invocation (without modifying .cue/HEAD). " +
-      "Use 'master' for the global context."
+    task: tool.schema.string().describe(
+      "Task scope for this invocation. Use 'master' for global context."
     ),
     dir: tool.schema.string().optional().describe(
       "Run cue as if started in this directory instead of the session directory. " +
@@ -33,7 +46,7 @@ const cueLogTool = tool({
 
     try {
       await Bun.write(tempPath, JSON.stringify(payload))
-      const dirFlag = args.dir ? ["--dir", args.dir] : []
+      const dirFlag = resolveDir(args.dir, context.directory)
       const taskFlag = args.task ? ["--task", args.task] : []
       await Bun.$`cue log add ${dirFlag} ${taskFlag} --file ${tempPath}`.cwd(context.directory).quiet()
       return `Logged milestone: ${args.title}`

@@ -1,24 +1,18 @@
 ---
-description: Get a quick summary of project state
+description: Infer and create a new cue task from prompt and initialize context
 ---
-
-PWD: !`pwd`
-
-!`$HOME/.config/opencode/scripts/git-context.sh`
-
-!`cue status 2>/dev/null || echo "(cue status unavailable)"`
-
-!`cue context render --profile default 2>/dev/null`
-
-Load the `cue` skill.
-
-**Mandatory Instructions:**
-1. Analyze the project intent and recent progress provided in the injected artifacts above.
-2. Provide a lightning-fast, structured summary (Intent, Status, Next Steps).
-3. **DO NOT** perform any further research, git commands, or file reads.
-4. **DO NOT** engage in any other task.
-5. Immediately report the summary to the user and await instructions unless provided in <user-instructions>:
 
 <user-instructions>
 $ARGUMENTS
 </user-instructions>
+
+PWD: !`pwd`
+
+Load the `cue` skill.
+
+**Mandatory Instructions:**
+
+ - Analyze user instructions in `<user-instructions>` if present.
+ - Infer a concise kebab-case slug (e.g. `add-feature-x`), title, task category (`kind: research|design|build|review|coord`), and high-level context/description.
+ - Call `cue-task` to create the new task card with `kind` set (defaulting to `build` if ambiguous) and `status: "in-progress"`.
+ - Load the skill corresponding to the inferred kind (`cue-<kind>`), report back with a concise summary of the created task card, and await instructions unless explicit instructions are provided in `<user-instructions>`.

@@ -1,7 +1,21 @@
 import { type Plugin, tool } from "@opencode-ai/plugin"
-import { join } from "node:path"
-import { tmpdir } from "node:os"
+import { isAbsolute, join, resolve } from "node:path"
+import { homedir, tmpdir } from "node:os"
 import { frontmatterFlags } from "./frontmatter"
+
+function resolveDir(dir: string | undefined, cwd: string): string[] {
+  if (!dir) {
+    return []
+  }
+  let expanded = dir
+  if (expanded.startsWith("~/") || expanded === "~") {
+    expanded = homedir() + expanded.slice(1)
+  }
+  if (isAbsolute(expanded)) {
+    return ["--dir", expanded]
+  }
+  return ["--dir", resolve(cwd, expanded)]
+}
 
 const cuePlanTool = tool({
   description: "Create a new plan artifact.",
@@ -15,12 +29,14 @@ const cuePlanTool = tool({
     status: tool.schema.enum(["open", "in-progress", "complete", "closed"]).optional().default("open").describe(
       "Status of the plan"
     ),
+    parent: tool.schema.string().optional().describe(
+      "Parent master plan path (e.g. 'plan/index.md'). Emitted as `parent:` frontmatter."
+    ),
     refs: tool.schema.array(tool.schema.string()).default([]).describe(
       "Artifact paths (relative to .cue/) this plan links to. Emitted as a `refs:` YAML list."
     ),
-    task: tool.schema.string().optional().describe(
-      "Override active task scope for this invocation (without modifying .cue/HEAD). " +
-      "Use 'master' for the global context."
+    task: tool.schema.string().describe(
+      "Task scope for this invocation. Use 'master' for global context."
     ),
     dir: tool.schema.string().optional().describe(
       "Run cue as if started in this directory instead of the session directory. " +
@@ -32,12 +48,15 @@ const cuePlanTool = tool({
     try {
       await Bun.write(tempPath, args.content)
 
-      const dirFlag = args.dir ? ["--dir", args.dir] : []
+      const dirFlag = resolveDir(args.dir, context.directory)
       const taskFlag = args.task ? ["--task", args.task] : []
       const rootFlag = args.root ? ["--root"] : []
       const frontmatter: Record<string, string | string[]> = {
         status: args.status ?? "open",
         refs: args.refs,
+      }
+      if (args.parent) {
+        frontmatter.parent = args.parent
       }
       const fmFlags = frontmatterFlags(frontmatter)
 

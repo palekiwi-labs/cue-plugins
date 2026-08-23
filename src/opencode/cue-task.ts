@@ -1,19 +1,39 @@
 import { type Plugin, tool } from "@opencode-ai/plugin"
-import { join } from "node:path"
-import { tmpdir } from "node:os"
+import { isAbsolute, join, resolve } from "node:path"
+import { homedir, tmpdir } from "node:os"
 import { frontmatterFlags } from "./frontmatter"
+
+function resolveDir(dir: string | undefined, cwd: string): string[] {
+  if (!dir) {
+    return []
+  }
+  let expanded = dir
+  if (expanded.startsWith("~/") || expanded === "~") {
+    expanded = homedir() + expanded.slice(1)
+  }
+  if (isAbsolute(expanded)) {
+    return ["--dir", expanded]
+  }
+  return ["--dir", resolve(cwd, expanded)]
+}
 
 const cueTaskTool = tool({
   description: "Create a new task artifact (kanban board card). Always saved to the master branch.",
   args: {
     filename: tool.schema.string().describe("Slug-based name (e.g., 'auth-login.md'). No numeric ID."),
-    content: tool.schema.string().describe("Full body of the task, including the Acceptance Criteria table."),
+    content: tool.schema.string().describe("Full body of the task describing the problem, initiative, or summary."),
     title: tool.schema.string().describe("Short display title for the board."),
     status: tool.schema.enum(["open", "in-progress", "complete", "closed"]).optional().default("open").describe(
       "Status of the task"
     ),
     priority: tool.schema.enum(["critical", "high", "normal", "low"]).optional().default("normal").describe(
       "Priority of the task"
+    ),
+    kind: tool.schema.enum(["research", "design", "build", "review", "coord"]).optional().describe(
+      "Task category classification (e.g. research, design, build, review, coord)"
+    ),
+    parent: tool.schema.string().optional().describe(
+      "Parent task slug or path (e.g. 'parent-task-slug'). Emitted as `parent:` frontmatter."
     ),
     refs: tool.schema.array(tool.schema.string()).default([]).describe(
       "Artifact paths (relative to .cue/) this task links to (e.g. the spec it implements). " +
@@ -29,12 +49,18 @@ const cueTaskTool = tool({
     try {
       await Bun.write(tempPath, args.content)
 
-      const dirFlag = args.dir ? ["--dir", args.dir] : []
+      const dirFlag = resolveDir(args.dir, context.directory)
       const frontmatter: Record<string, string | string[]> = {
         title: args.title,
         status: args.status ?? "open",
         priority: args.priority ?? "normal",
         refs: args.refs,
+      }
+      if (args.kind) {
+        frontmatter.kind = args.kind
+      }
+      if (args.parent) {
+        frontmatter.parent = args.parent
       }
       const fmFlags = frontmatterFlags(frontmatter)
 
