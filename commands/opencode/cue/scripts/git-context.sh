@@ -1,22 +1,33 @@
 #!/usr/bin/env bash
 # Determine git context for code reviews and PRs
 
-# 1. Determine Base Branch
-GIT_DIR=$(git rev-parse --git-dir 2>/dev/null)
-if [ -n "$GIT_DIR" ] && [ -f "$GIT_DIR/GIT_BASE" ]; then
-    BASE_BRANCH=$(cat "$GIT_DIR/GIT_BASE")
-elif git show-ref --verify --quiet refs/heads/master; then
-    BASE_BRANCH="master"
-elif git show-ref --verify --quiet refs/heads/main; then
-    BASE_BRANCH="main"
-else
-    # Fallback to origin if local doesn't exist
-    BASE_BRANCH=$(git remote show origin 2>/dev/null | grep 'HEAD branch' | cut -d' ' -f5)
-    BASE_BRANCH=${BASE_BRANCH:-"master"}
+# 1. Determine Current Branch
+CURRENT_BRANCH=$(git symbolic-ref --quiet --short HEAD 2>/dev/null || git branch --show-current 2>/dev/null || true)
+
+# 2. Determine Base Branch via offline hierarchy (<5ms)
+BASE_BRANCH=""
+if [ -n "$CURRENT_BRANCH" ]; then
+    BASE_BRANCH=$(git config "branch.${CURRENT_BRANCH}.base" 2>/dev/null || true)
 fi
 
-# 2. Determine Current Branch
-CURRENT_BRANCH=$(git branch --show-current 2>/dev/null)
+if [ -z "$BASE_BRANCH" ]; then
+    REMOTE_HEAD=$(git symbolic-ref --quiet --short refs/remotes/origin/HEAD 2>/dev/null || true)
+    if [ -n "$REMOTE_HEAD" ]; then
+        BASE_BRANCH="${REMOTE_HEAD#origin/}"
+    fi
+fi
+
+if [ -z "$BASE_BRANCH" ]; then
+    if git show-ref --verify --quiet refs/heads/main 2>/dev/null || \
+       git show-ref --verify --quiet refs/remotes/origin/main 2>/dev/null; then
+        BASE_BRANCH="main"
+    elif git show-ref --verify --quiet refs/heads/master 2>/dev/null || \
+         git show-ref --verify --quiet refs/remotes/origin/master 2>/dev/null; then
+        BASE_BRANCH="master"
+    else
+        BASE_BRANCH="master"
+    fi
+fi
 
 # 3. Determine Merge Base
 if [ -n "$CURRENT_BRANCH" ] && [ -n "$BASE_BRANCH" ]; then
