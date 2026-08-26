@@ -17,14 +17,44 @@ function resolveDir(dir: string | undefined, cwd: string): string[] {
   return ["--dir", resolve(cwd, expanded)]
 }
 
+/**
+ * Build the task frontmatter object from tool args.
+ *
+ * Omitted fields fall back to defaults; `status` defaults to "inbox" so
+ * agent-created tasks enter the board as triage items rather than
+ * immediately actionable "open" cards. Kept pure for unit testing.
+ */
+export function taskFrontmatter(args: {
+  title: string
+  status?: string
+  priority?: string
+  kind?: string
+  parent?: string
+  refs: string[]
+}): Record<string, string | string[]> {
+  const fm: Record<string, string | string[]> = {
+    title: args.title,
+    status: args.status ?? "inbox",
+    priority: args.priority ?? "normal",
+    refs: args.refs,
+  }
+  if (args.kind) {
+    fm.kind = args.kind
+  }
+  if (args.parent) {
+    fm.parent = args.parent
+  }
+  return fm
+}
+
 const cueTaskTool = tool({
   description: "Create a new task artifact (kanban board card). Always saved to the master branch.",
   args: {
     filename: tool.schema.string().describe("Slug-based name (e.g., 'auth-login.md'). No numeric ID."),
     content: tool.schema.string().describe("Full body of the task describing the problem, initiative, or summary."),
     title: tool.schema.string().describe("Short display title for the board."),
-    status: tool.schema.enum(["open", "in-progress", "complete", "closed"]).optional().default("open").describe(
-      "Status of the task"
+    status: tool.schema.enum(["inbox", "open", "in-progress", "complete", "closed"]).optional().default("inbox").describe(
+      "Status of the task. Defaults to \"inbox\" (operator triage); promote to \"open\" or \"in-progress\" when work is accepted."
     ),
     priority: tool.schema.enum(["critical", "high", "normal", "low"]).optional().default("normal").describe(
       "Priority of the task"
@@ -50,18 +80,7 @@ const cueTaskTool = tool({
       await Bun.write(tempPath, args.content)
 
       const dirFlag = resolveDir(args.dir, context.directory)
-      const frontmatter: Record<string, string | string[]> = {
-        title: args.title,
-        status: args.status ?? "open",
-        priority: args.priority ?? "normal",
-        refs: args.refs,
-      }
-      if (args.kind) {
-        frontmatter.kind = args.kind
-      }
-      if (args.parent) {
-        frontmatter.parent = args.parent
-      }
+      const frontmatter = taskFrontmatter(args)
       const fmFlags = frontmatterFlags(frontmatter)
 
       const output = await Bun.$`cue add ${dirFlag} --type task --task master --root ${fmFlags} --file ${tempPath} ${args.filename}`
