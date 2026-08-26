@@ -23,7 +23,13 @@ Markdown artifacts in `cue` use YAML frontmatter as the single source of truth f
 
 ### `status:`
 
-Artifacts track lifecycle status: `status: open|in-progress|complete|closed`.
+Artifacts track lifecycle status: `status: inbox|open|in-progress|complete|closed`.
+
+`inbox` is the intake/triage state: new tasks created through tooling
+default to `inbox` and are promoted by the operator to `open` (accepted)
+or `in-progress` (active work) once triaged. Other artifact types start
+at `open`. Never auto-promote an `inbox` task; triage is an operator
+decision.
 
 ### `priority:`
 
@@ -174,7 +180,8 @@ Always use `cue list` (or harness tools) to discover and inspect artifacts.
 ### Common Discovery Patterns
 
 - **Tasks on master board**: `cue list --task master --type task`
-- **Open/In-progress tasks**: `cue list --task master --type task --filter "status!=complete" --filter "status!=closed"`
+- **Unfinished tasks (incl. inbox)**: `cue list --task master --type task --filter "status!=complete" --filter "status!=closed"`
+- **Inbox (awaiting triage)**: `cue list --task master --type task --filter "status=inbox"`
 - **Child tasks of a parent**: `cue list --task master --type task --filter "parent=<parent-slug>"`
 - **High priority items**: `cue list --task master --type task --filter "priority=high" --frontmatter`
 
