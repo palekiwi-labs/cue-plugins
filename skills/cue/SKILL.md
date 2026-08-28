@@ -95,7 +95,8 @@ and cross-task contamination during concurrent sessions:
 2. **Prohibition of `.cue/HEAD` Mutation**: `.cue/HEAD` is owned exclusively by
    the human operator.
 3. **Subagent Scope Propagation**: When delegating work to subagents, the
-   primary agent MUST include the task scope directive in the subagent prompt.
+   primary agent MUST include the task scope directive in the subagent prompt
+   and set `$CUE_TASK` for child processes or sessions when supported.
 
 ## Artifact Contracts
 
@@ -206,7 +207,9 @@ Always append a log entry immediately after making git commits, making important
 - **Executive Plan Adherence**: Implement current steps in the active executive plan incrementally. Update checkboxes (`- [x]`) as steps complete.
 - **Scope Compliance**: Implement requested scope only. Capture out-of-scope items in `todo` or `note` artifacts rather than performing unrequested work.
 - **Context Awareness**: Verify active context at session start. Explicitly pass context scope during sub-agent handoffs.
-- **Git Worktree Isolation**: Never attempt to include `.cue/` changes in `git commit` commands; memory artifacts are managed in a separate git worktree.
+- **Git Worktree Isolation**: Never attempt to include `.cue/` changes in Git
+  commits. The store lives at the main Git root and is shared by linked
+  worktrees; `.cue/HEAD` remains local to each worktree.
 
 ## DOs and DON'Ts
 
@@ -239,7 +242,7 @@ Always append a log entry immediately after making git commits, making important
 - **DO** log milestones, decisions, and dead-ends immediately in `.cue/<context>/log.md`.
 - **DO** resolve all open task-scoped `todo` artifacts before marking a task complete.
 - **DON'T** run `cue switch` or mutate `.cue/HEAD` (owned exclusively by the human operator).
-- **DON'T** search `.cue/` directly with `grep` or `find` (use `cue list` to handle frontmatter and proxy stores).
+- **DON'T** search `.cue/` directly with `grep` or `find` (use `cue list`)
 - **DON'T** include changes in `.cue/` in `git commit` commands.
 - **DON'T** fix unrelated out-of-scope issues during active task execution.
 

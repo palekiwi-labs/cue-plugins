@@ -1,11 +1,17 @@
 # cue CLI Reference
 
-The `cue` command-line tool manages file-based context and memory artifacts stored in `.cue/`.
+The `cue` command-line tool manages file-based context and memory artifacts in
+the main Git root's `.cue/` store. Linked worktrees share that store while each
+keeps a local `.cue/HEAD` selection.
+
+Scoped commands resolve context as `--task <SLUG>` > `$CUE_TASK` > local
+`.cue/HEAD` > `master`. Agents should set `$CUE_TASK` for child processes and
+sessions instead of changing the human-owned HEAD file.
 
 ## Primary Commands
 
 ### `cue status`
-Prints the currently active context scope resolved from `.cue/HEAD`.
+Prints the resolved context scope.
 
 ```bash
 cue status
@@ -30,7 +36,8 @@ cue list [OPTIONS]
 
 **Key Flags:**
 - `--type <TYPE>`, `-t <TYPE>`: Filter by artifact category (`task`, `plan`, `spec`, `todo`, `note`, `trace`, `doc`).
-- `--task <SLUG>`: Target a specific task scope without mutating `.cue/HEAD`.
+- `--task <SLUG>`: Target a specific task scope without mutating `.cue/HEAD`;
+  overrides `$CUE_TASK` and HEAD.
 - `--all`, `-a`: Search across all task context directories in `.cue/`.
 - `--json`, `-j`: Output a JSON array of `CueFile` objects.
 - `--frontmatter`: Include parsed YAML frontmatter objects in JSON output (implies `--json`).
