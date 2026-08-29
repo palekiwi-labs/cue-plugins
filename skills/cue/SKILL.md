@@ -202,6 +202,37 @@ Standard Entry Schema:
 
 Always append a log entry immediately after making git commits, making important discoveries or abandoning failed approaches.
 
+## Context Saturation Checkpoints
+
+Agent reasoning quality degrades as context grows. Guard the session
+against saturation bounds (by default ~80k caution / ~100k soft / ~140k
+hard) by checking context usage at milestones, not continuously.
+
+### When to Check
+
+1. **Post-Commit / Post-Milestone**: immediately after committing and
+   running `cue-log`.
+1. **Pre-Task Selection**: before pulling the next checkbox item from an
+   executive plan.
+1. **Post-Investigation**: after search/explore operations that ingested
+   substantial output.
+
+### How to Check
+
+- opencode: call the `cue-context-usage` tool.
+- pi: call `ctx.getContextUsage()` from an extension/tool.
+
+### Decision Matrix
+
+- **NOMINAL** (below caution): continue; any task size.
+- **CAUTION** (below soft): atomic steps only (under ~10k expected
+  tokens); hand off before large discovery or multi-file refactors.
+- **EXCEEDED_SOFT** (below hard): hand-off mandatory. Finish only the
+  in-flight atomic commit/log; start no new plan items. Load the
+  `cue-handoff` skill.
+- **CRITICAL** (at/above hard): immediate halt. Cease edits, perform an
+  emergency hand-off log, and stop.
+
 ## Operational Discipline
 
 - **Executive Plan Adherence**: Implement current steps in the active executive plan incrementally. Update checkboxes (`- [x]`) as steps complete.
