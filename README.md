@@ -20,6 +20,7 @@ Add the following to your `opencode.json` configuration file (replace `<your-use
   "plugin": [
     "/home/<your-username>/.config/opencode/plugin/palekiwi-labs/cue-plugins/src/opencode/acuity-plugin.ts",
     "/home/<your-username>/.config/opencode/plugin/palekiwi-labs/cue-plugins/src/opencode/cue-add.ts",
+    "/home/<your-username>/.config/opencode/plugin/palekiwi-labs/cue-plugins/src/opencode/cue-context-usage.ts",
     "/home/<your-username>/.config/opencode/plugin/palekiwi-labs/cue-plugins/src/opencode/cue-log.ts",
     "/home/<your-username>/.config/opencode/plugin/palekiwi-labs/cue-plugins/src/opencode/cue-plan.ts",
     "/home/<your-username>/.config/opencode/plugin/palekiwi-labs/cue-plugins/src/opencode/cue-task.ts"
@@ -33,6 +34,15 @@ Add the following to your `opencode.json` configuration file (replace `<your-use
 ## Available Tools
 
 - **cue-add**: Generic tool to create any cue artifact (spec, note, doc, todo, trace, tmp).
+- **cue-context-usage**: Report the session's context token saturation
+  against caution/soft/hard limits (80k/100k/140k by default) with
+  proceed/hand-off guidance. Agents call it at milestones (post-commit,
+  pre-task, post-investigation) per the `cue` skill checkpoint protocol;
+  the `cue-handoff` skill covers the closing sequence when limits are
+  reached. Thresholds are configurable via plugin options:
+  ```json
+  ["./src/opencode/cue-context-usage.ts", { "soft": 90000, "hard": 130000 }]
+  ```
 - **cue-log**: Record milestones, decisions, and discoveries.
 - **cue-plan**: Create technical plans and executive slices.
 - **cue-task**: Manage kanban tasks on the master branch.
