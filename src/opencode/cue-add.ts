@@ -30,10 +30,13 @@ const cueAddTool = tool({
   description: "Create a new cue artifact (spec, doc, trace, etc.).",
   args: {
     type: tool.schema.string().default("spec").describe(
-      "Type of the artifact. Standard types: spec, plan, todo, trace, tmp, ref, bin, doc. " +
+      "Type of the artifact. Standard types: spec, plan, todo, trace, tmp, bin, doc. " +
       "Custom types may also be used if configured in cue.json."
     ),
-    filename: tool.schema.string().describe("Name of the file (e.g., 'research-report.md')"),
+    filename: tool.schema.string().describe(
+      "Name of the file (e.g., 'research-report.md'). Extensionless names get '.md' " +
+      "appended for markdown types (doc, note, plan, spec, task, todo)."
+    ),
     content: tool.schema.string().describe("Full content of the artifact"),
     root: tool.schema.boolean().optional().describe(
       "When true, saves flat at <type>/<filename> — the root of the type directory. " +

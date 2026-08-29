@@ -9,12 +9,12 @@ describe("shouldUseRoot", () => {
     expect(shouldUseRoot("plan")).toBe(true)
   })
 
-  test("defaults to false for point-in-time types: todo, trace, tmp, custom", () => {
+  test("defaults to false for point-in-time types: todo, trace, tmp, bin, custom", () => {
     expect(shouldUseRoot("todo")).toBe(false)
     expect(shouldUseRoot("trace")).toBe(false)
     expect(shouldUseRoot("tmp")).toBe(false)
+    expect(shouldUseRoot("bin")).toBe(false)
     expect(shouldUseRoot("custom")).toBe(false)
-    expect(shouldUseRoot("ref")).toBe(false)
   })
 
   test("respects explicit root overrides when root boolean is provided", () => {
