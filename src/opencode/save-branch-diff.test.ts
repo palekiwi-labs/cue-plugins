@@ -45,36 +45,23 @@ describe("diffFilename", () => {
   test("falls back to branch.diff when branch is unknown", () => {
     expect(diffFilename("")).toBe("branch.diff")
   })
-
-  test("explicit filename overrides the derived name", () => {
-    expect(diffFilename("master", "review.diff")).toBe("review.diff")
-    expect(diffFilename("master", "  padded.diff  ")).toBe("padded.diff")
-  })
-
-  test("falls back to derived name when explicit filename is blank", () => {
-    expect(diffFilename("feat/x", "   ")).toBe("feat-x.diff")
-  })
 })
 
 describe("resolveBase", () => {
-  test("explicit base wins over everything", () => {
-    expect(resolveBase("develop", "master", "origin/main")).toBe("develop")
-  })
-
-  test("git config branch.<name>.base is next in hierarchy", () => {
-    expect(resolveBase(undefined, "main", "origin/master")).toBe("main")
+  test("git config branch.<name>.base wins first", () => {
+    expect(resolveBase("main", "origin/master")).toBe("main")
   })
 
   test("origin/HEAD symbolic ref is stripped of its prefix", () => {
-    expect(resolveBase(undefined, "", "origin/trunk")).toBe("trunk")
+    expect(resolveBase("", "origin/trunk")).toBe("trunk")
   })
 
   test("falls back to master when nothing is known", () => {
-    expect(resolveBase(undefined, "", "")).toBe("master")
-    expect(resolveBase(undefined, undefined, undefined)).toBe("master")
+    expect(resolveBase("", "")).toBe("master")
+    expect(resolveBase(undefined, undefined)).toBe("master")
   })
 
   test("blank values are treated as absent", () => {
-    expect(resolveBase("   ", "  ", "  ")).toBe("master")
+    expect(resolveBase("  ", "  ")).toBe("master")
   })
 })

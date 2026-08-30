@@ -18,32 +18,24 @@ export function sanitizeBranchName(branch: string): string {
 }
 
 /**
- * Artifact filename for a saved diff: an explicit filename wins when
- * non-blank, otherwise it derives from the sanitized branch name. An
- * unknown branch (detached HEAD) falls back to "branch".
+ * Artifact filename for a saved diff, derived from the sanitized branch
+ * name so different branches keep separate files. An unknown branch
+ * (detached HEAD) falls back to "branch".
  */
-export function diffFilename(branch: string, filename?: string): string {
-  const explicit = filename?.trim()
-  if (explicit) {
-    return explicit
-  }
+export function diffFilename(branch: string): string {
   const name = sanitizeBranchName(branch) || "branch"
   return `${name}.diff`
 }
 
 /**
- * Offline base-branch hierarchy: explicit override, then the
- * git-pr-sync-written `branch.<name>.base` config key, then origin/HEAD,
- * then "master". Blank values are treated as absent.
+ * Offline base-branch hierarchy: the git-pr-sync-written
+ * `branch.<name>.base` config key, then origin/HEAD, then "master".
+ * Blank values are treated as absent.
  */
 export function resolveBase(
-  explicit?: string,
   configBase?: string,
   remoteHeadRef?: string,
 ): string {
-  if (explicit?.trim()) {
-    return explicit.trim()
-  }
   if (configBase?.trim()) {
     return configBase.trim()
   }
@@ -54,18 +46,18 @@ export function resolveBase(
 }
 
 /**
- * Resolve the user-supplied worktree path against the session directory,
+ * Resolve the user-supplied directory against the session directory,
  * expanding "~" like the dir flag of the other cue tools. Returns null
- * when no worktree was given (use the session directory as-is).
+ * when no directory was given (use the session directory as-is).
  */
 function resolveTargetDir(
-  worktree: string | undefined,
+  dir: string | undefined,
   sessionDir: string,
 ): string | null {
-  if (!worktree?.trim()) {
+  if (!dir?.trim()) {
     return null
   }
-  let expanded = worktree.trim()
+  let expanded = dir.trim()
   if (expanded.startsWith("~/") || expanded === "~") {
     expanded = homedir() + expanded.slice(1)
   }
@@ -100,31 +92,20 @@ async function gitText(argv: string[], cwd: string): Promise<string> {
 
 const saveBranchDiffTool = tool({
   description:
-    "Generate a diff of a feature branch against its base branch and save " +
-    "it to cue as a tmp artifact named after the branch. Works from the " +
-    "session directory or any git worktree of the repository.",
+    "Generate a diff of the current feature branch against its base branch " +
+    "and save it to cue as a tmp artifact named after the branch. Defaults " +
+    "to the session directory; pass dir to target another worktree of the " +
+    "repository.",
   args: {
-    task: tool.schema.string().describe(
-      "Task scope for this invocation. Use 'master' for global context.",
-    ),
-    worktree: tool.schema.string().optional().describe(
-      "Path to the git worktree whose HEAD should be diffed. Defaults to " +
-      "the session directory. Relative paths resolve against the session " +
-      "directory; ~ expands to the home directory.",
-    ),
-    base: tool.schema.string().optional().describe(
-      "Base branch to diff against. Defaults to the offline hierarchy: " +
-      "branch.<current>.base from git config (maintained by git-pr-sync), " +
-      "then origin/HEAD, then master.",
-    ),
-    filename: tool.schema.string().optional().describe(
-      "Artifact filename override. Defaults to the sanitized branch name " +
-      "with .diff appended (feat/foo -> feat-foo.diff).",
+    dir: tool.schema.string().optional().describe(
+      "Directory whose branch should be diffed. Defaults to the session " +
+      "directory. Relative paths resolve against the session directory; " +
+      "~ expands to the home directory.",
     ),
   },
   async execute(args, context) {
     // 1. Pick the git tree to operate on
-    const targetDir = resolveTargetDir(args.worktree, context.directory) ??
+    const targetDir = resolveTargetDir(args.dir, context.directory) ??
       context.directory
 
     // 2. Current branch (empty string on detached HEAD)
@@ -138,7 +119,7 @@ const saveBranchDiffTool = tool({
       ["symbolic-ref", "--quiet", "--short", "refs/remotes/origin/HEAD"],
       targetDir,
     )
-    const base = resolveBase(args.base, configBase, remoteHeadRef)
+    const base = resolveBase(configBase, remoteHeadRef)
 
     // 4. Generate the diff (a bad base is a real error; surface git's stderr)
     const diff = await runGit(["diff", `${base}...HEAD`], targetDir)
@@ -157,13 +138,14 @@ const saveBranchDiffTool = tool({
       }
     }
 
-    // 5. Save to cue via a temp file (content never hits a shell)
-    const filename = diffFilename(branch, args.filename)
+    // 5. Save to cue via a temp file (content never hits a shell);
+    //    scope resolves like a plain `cue add` (.cue/HEAD of the tree)
+    const filename = diffFilename(branch)
     const tempPath = join(tmpdir(), `branch-diff-${Date.now()}.diff`)
     try {
       await Bun.write(tempPath, diffContent)
 
-      const output = await Bun.$`cue add --type tmp --root --force --task ${args.task} --file ${tempPath} ${filename}`
+      const output = await Bun.$`cue add --type tmp --root --force --file ${tempPath} ${filename}`
         .cwd(targetDir)
         .quiet()
         .text()
