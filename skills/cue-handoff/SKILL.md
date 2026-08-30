@@ -12,6 +12,17 @@ A hand-off ends a session cleanly so a fresh agent can resume the task
 with no lost context. Run this deterministic closing sequence in order;
 do not start new work once the sequence begins.
 
+## Context Saturation
+
+Reasoning quality degrades as a session's context grows, and every
+session has finite capacity. The `cue-log` tool reports the session's
+context state at the end of each entry. When that note says the session
+is above the soft saturation limit, the remaining context is no longer
+reliable for substantial work: hand off via this skill instead of
+starting anything new. Above the hard limit, stop editing and hand off
+immediately. Handing off is a normal part of the workflow, not a
+failure.
+
 ## Closing Sequence
 
 1. **Stop new work**: finish the current atomic step (commit and log), or
