@@ -58,6 +58,21 @@ const GUIDANCE: Record<SaturationLevel, string> = {
     "emergency hand-off log, and stop.",
 }
 
+// One-line context state note appended to tool outputs (e.g. cue-log).
+// Deliberately number-free: the level name is the signal, not the count.
+const CONTEXT_NOTE: Record<SaturationLevel, string> = {
+  nominal: "Context: nominal.",
+  caution: "Context: nearing saturation.",
+  exceeded_soft:
+    "Context: above the soft saturation limit — load the cue-handoff skill.",
+  critical:
+    "Context: above the hard saturation limit — load the cue-handoff skill immediately.",
+}
+
+export function contextNote(level: SaturationLevel): string {
+  return CONTEXT_NOTE[level]
+}
+
 export function buildReport(
   tokens: number,
   thresholds?: Partial<Thresholds>,

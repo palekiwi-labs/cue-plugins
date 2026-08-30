@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test"
 import {
   DEFAULT_THRESHOLDS,
   buildReport,
+  contextNote,
   estimateContextTokens,
   formatReport,
   resolveThresholds,
@@ -189,5 +190,27 @@ describe("formatReport", () => {
     const t = resolveThresholds()
     const text = formatReport({ ...buildReport(82_450), estimated: true }, t)
     expect(text).toMatch(/estimate/i)
+  })
+})
+
+describe("contextNote", () => {
+  test("nominal and caution state the level without hand-off instructions", () => {
+    expect(contextNote("nominal")).toBe("Context: nominal.")
+    expect(contextNote("caution")).toBe("Context: nearing saturation.")
+  })
+
+  test("above soft asks to load the cue-handoff skill", () => {
+    expect(contextNote("exceeded_soft")).toMatch(/cue-handoff/)
+    expect(contextNote("critical")).toMatch(/cue-handoff/)
+  })
+
+  test("critical urges immediate hand-off", () => {
+    expect(contextNote("critical")).toMatch(/immediately/)
+  })
+
+  test("notes carry no numbers", () => {
+    for (const level of ["nominal", "caution", "exceeded_soft", "critical"] as const) {
+      expect(contextNote(level)).not.toMatch(/\d/)
+    }
   })
 })
