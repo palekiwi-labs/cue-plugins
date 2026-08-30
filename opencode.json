@@ -6,7 +6,8 @@
     "./src/opencode/cue-context-usage.ts",
     "./src/opencode/cue-log.ts",
     "./src/opencode/cue-plan.ts",
-    "./src/opencode/cue-task.ts"
+    "./src/opencode/cue-task.ts",
+    "./src/opencode/save-branch-diff.ts"
   ],
   "skills": {
     "paths": ["./skills/"]
