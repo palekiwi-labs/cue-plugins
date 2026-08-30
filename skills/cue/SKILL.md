@@ -190,48 +190,23 @@ For complete command details and options, see `skills/cue/reference/cli.md`.
 
 ## History & Logging (`cue-log`)
 
-Record milestones, technical decisions, dead-ends, and post-commit impacts as structured entries in `.cue/<context>/log.md`.
+Record milestones, technical decisions, dead-ends, and post-commit impacts as
+structured entries in `.cue/<context>/log.md`.
+
+`log.md` captures the long-term feature horizon: milestones, architectural
+choices, and rationale. Keep entries slim and high-level. Offload deep
+operational scaffolding to companion `trace` artifacts and reference them by
+path in the log entry.
 
 Standard Entry Schema:
 
 - **Title**: Concise summary of the milestone or event.
-- **Body**: Detailed narrative or context.
+- **Body**: Detailed narrative or context (and pointers to companion traces if applicable).
 - **Found**: List of discovered facts or learnings.
 - **Decided**: Technical decisions made.
 - **Open**: Unresolved questions or follow-up items.
 
 Always append a log entry immediately after making git commits, making important discoveries or abandoning failed approaches.
-
-## Context Saturation Checkpoints
-
-Agent reasoning quality degrades as context grows. Guard the session
-against saturation bounds (by default ~80k caution / ~100k soft / ~140k
-hard) by checking context usage at milestones, not continuously.
-
-### When to Check
-
-1. **Post-Commit / Post-Milestone**: immediately after committing and
-   running `cue-log`.
-1. **Pre-Task Selection**: before pulling the next checkbox item from an
-   executive plan.
-1. **Post-Investigation**: after search/explore operations that ingested
-   substantial output.
-
-### How to Check
-
-- opencode: call the `cue-context-usage` tool.
-- pi: call `ctx.getContextUsage()` from an extension/tool.
-
-### Decision Matrix
-
-- **NOMINAL** (below caution): continue; any task size.
-- **CAUTION** (below soft): atomic steps only (under ~10k expected
-  tokens); hand off before large discovery or multi-file refactors.
-- **EXCEEDED_SOFT** (below hard): hand-off mandatory. Finish only the
-  in-flight atomic commit/log; start no new plan items. Load the
-  `cue-handoff` skill.
-- **CRITICAL** (at/above hard): immediate halt. Cease edits, perform an
-  emergency hand-off log, and stop.
 
 ## Operational Discipline
 
@@ -271,6 +246,7 @@ hard) by checking context usage at milestones, not continuously.
 - **DO** discover and inspect artifacts using `cue list` instead of searching `.cue/` directly.
 - **DO** pass `task: "<slug>"` explicitly on all cue tool calls (`cue-add`, `cue-log`, `cue-plan`).
 - **DO** log milestones, decisions, and dead-ends immediately in `.cue/<context>/log.md`.
+- **DO** keep `log.md` entries focused on feature-horizon milestones and reference companion traces for deep output.
 - **DO** resolve all open task-scoped `todo` artifacts before marking a task complete.
 - **DON'T** run `cue switch` or mutate `.cue/HEAD` (owned exclusively by the human operator).
 - **DON'T** search `.cue/` directly with `grep` or `find` (use `cue list`)
