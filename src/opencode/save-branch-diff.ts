@@ -97,6 +97,9 @@ const saveBranchDiffTool = tool({
     "to the session directory; pass dir to target another worktree of the " +
     "repository.",
   args: {
+    task: tool.schema.string().describe(
+      "Task scope for this invocation. Use 'master' for global context.",
+    ),
     dir: tool.schema.string().optional().describe(
       "Directory whose branch should be diffed. Defaults to the session " +
       "directory. Relative paths resolve against the session directory; " +
@@ -139,13 +142,13 @@ const saveBranchDiffTool = tool({
     }
 
     // 5. Save to cue via a temp file (content never hits a shell);
-    //    scope resolves like a plain `cue add` (.cue/HEAD of the tree)
+    //    --task scopes explicitly instead of relying on .cue/HEAD
     const filename = diffFilename(branch)
     const tempPath = join(tmpdir(), `branch-diff-${Date.now()}.diff`)
     try {
       await Bun.write(tempPath, diffContent)
 
-      const output = await Bun.$`cue add --type tmp --root --force --file ${tempPath} ${filename}`
+      const output = await Bun.$`cue add --type tmp --root --force --task ${args.task} --file ${tempPath} ${filename}`
         .cwd(targetDir)
         .quiet()
         .text()
