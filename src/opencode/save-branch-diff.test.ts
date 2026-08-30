@@ -1,5 +1,9 @@
 import { describe, expect, test } from "bun:test"
-import { diffFilename, resolveBase, sanitizeBranchName } from "./save-branch-diff"
+import {
+  diffFilename,
+  resolveBase,
+  sanitizeBranchName,
+} from "./branch-diff-helpers"
 
 describe("sanitizeBranchName", () => {
   test("flattens slash-separated branch names", () => {
