@@ -1,7 +1,6 @@
 import { describe, expect, test } from "bun:test"
 import { tool, type PluginInput } from "@opencode-ai/plugin"
 import { CueLogPlugin } from "./cue-log"
-import { logPayload } from "./log-helpers"
 
 /**
  * The plugin only touches `input.client` inside the tool's execute path,
@@ -43,49 +42,5 @@ describe("cue-log tool schema", () => {
     expect(() =>
       schema.parse({ title: "Milestone", task: "master", trace: 42 })
     ).toThrow()
-  })
-})
-
-describe("logPayload", () => {
-  test("emits no body key for the cue CLI LogEntry schema", () => {
-    const payload = logPayload({ title: "Milestone" })
-    expect(Object.keys(payload)).not.toContain("body")
-    expect(JSON.parse(JSON.stringify(payload))).toEqual({ title: "Milestone" })
-  })
-
-  test("forwards the trace reference verbatim", () => {
-    // Resolution and existence checks belong to the CLI, which knows the
-    // store layout; the tool must not normalize the reference.
-    const trace = "  .cue/task/trace/1788149597-22be1e0/notes.md  "
-    expect(logPayload({ title: "Milestone", trace }).trace).toBe(trace)
-    expect(
-      logPayload({ title: "Milestone", trace: "/abs/trace.md" }).trace
-    ).toBe("/abs/trace.md")
-  })
-
-  test("omits trace when none was supplied", () => {
-    const payload = logPayload({ title: "Milestone", found: ["a"] })
-    expect(payload.trace).toBeUndefined()
-    expect(JSON.parse(JSON.stringify(payload))).toEqual({
-      title: "Milestone",
-      found: ["a"],
-    })
-  })
-
-  test("passes the bullet lists through unchanged", () => {
-    const payload = logPayload({
-      title: "Milestone",
-      trace: "trace.md",
-      found: ["found one"],
-      decided: ["decided one"],
-      open: ["open one"],
-    })
-    expect(payload).toEqual({
-      title: "Milestone",
-      trace: "trace.md",
-      found: ["found one"],
-      decided: ["decided one"],
-      open: ["open one"],
-    })
   })
 })

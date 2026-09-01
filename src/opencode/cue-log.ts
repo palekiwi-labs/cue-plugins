@@ -2,7 +2,6 @@ import { type Plugin, tool } from "@opencode-ai/plugin"
 import { isAbsolute, join, resolve } from "node:path"
 import { homedir, tmpdir } from "node:os"
 import { buildReport, contextNote, estimateContextTokens } from "./context-usage"
-import { logPayload } from "./log-helpers"
 
 function resolveDir(dir: string | undefined, cwd: string): string[] {
   if (!dir) {
@@ -63,7 +62,13 @@ export const CueLogPlugin: Plugin = async (input) => {
           const tempPath = join(tmpdir(), `cue-log-${Date.now()}.json`)
 
           // Create the JSON payload for the cue CLI
-          const payload = logPayload(args)
+          const payload = {
+            title: args.title,
+            trace: args.trace,
+            found: args.found,
+            decided: args.decided,
+            open: args.open,
+          }
 
           try {
             await Bun.write(tempPath, JSON.stringify(payload))
