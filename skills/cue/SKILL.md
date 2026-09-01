@@ -195,13 +195,15 @@ structured entries in `.cue/<context>/log.md`.
 
 `log.md` captures the long-term feature horizon: milestones, architectural
 choices, and rationale. Keep entries slim and high-level. Offload deep
-operational scaffolding to companion `trace` artifacts and reference them by
-path in the log entry.
+operational scaffolding to companion `trace` artifacts and reference one only
+when it preserves instrumental context for a successor.
 
 Standard Entry Schema:
 
 - **Title**: Concise summary of the milestone or event.
-- **Body**: Detailed narrative or context (and pointers to companion traces if applicable).
+- **Trace**: Optional repository-relative or absolute trace reference. Attach
+  one only when additional successor context is instrumental, especially for
+  hand-offs.
 - **Found**: List of discovered facts or learnings.
 - **Decided**: Technical decisions made.
 - **Open**: Unresolved questions or follow-up items.
