@@ -2,6 +2,7 @@ import { type Plugin, tool } from "@opencode-ai/plugin"
 import { isAbsolute, join, resolve } from "node:path"
 import { homedir, tmpdir } from "node:os"
 import { buildReport, contextNote, estimateContextTokens } from "./context-usage"
+import { logPayload } from "./log-helpers"
 
 function resolveDir(dir: string | undefined, cwd: string): string[] {
   if (!dir) {
@@ -42,7 +43,11 @@ export const CueLogPlugin: Plugin = async (input) => {
         description: "Add a structured log entry to the memory system.",
         args: {
           title: tool.schema.string().describe("Title of the log entry"),
-          body: tool.schema.string().optional().describe("Detailed description of the milestone"),
+          trace: tool.schema.string().optional().describe(
+            "Repository-relative or absolute reference to a trace artifact. " +
+            "Attach one only when a successor needs context beyond the " +
+            "found/decided/open bullets, such as at a hand-off."
+          ),
           found: tool.schema.array(tool.schema.string()).optional().describe("Findings discovered"),
           decided: tool.schema.array(tool.schema.string()).optional().describe("Decisions made"),
           open: tool.schema.array(tool.schema.string()).optional().describe("Remaining questions"),
@@ -58,13 +63,7 @@ export const CueLogPlugin: Plugin = async (input) => {
           const tempPath = join(tmpdir(), `cue-log-${Date.now()}.json`)
 
           // Create the JSON payload for the cue CLI
-          const payload = {
-            title: args.title,
-            body: args.body,
-            found: args.found,
-            decided: args.decided,
-            open: args.open,
-          }
+          const payload = logPayload(args)
 
           try {
             await Bun.write(tempPath, JSON.stringify(payload))
