@@ -39,17 +39,26 @@ export const CueLogPlugin: Plugin = async (input) => {
   return {
     tool: {
       "cue-log": tool({
-        description: "Add a structured log entry to the memory system.",
+        description: "Add a structured milestone, discovery, or post-commit log entry to the cue memory system.",
         args: {
-          title: tool.schema.string().describe("Title of the log entry"),
+          title: tool.schema.string().describe("Concise summary of the milestone, commit, or discovery."),
           trace: tool.schema.string().optional().describe(
             "Repository-relative or absolute reference to a trace artifact. " +
             "Attach one only when a successor needs context beyond the " +
             "found/decided/open bullets, such as at a hand-off."
           ),
-          found: tool.schema.array(tool.schema.string()).optional().describe("Findings discovered"),
-          decided: tool.schema.array(tool.schema.string()).optional().describe("Decisions made"),
-          open: tool.schema.array(tool.schema.string()).optional().describe("Remaining questions"),
+          found: tool.schema.array(tool.schema.string()).optional().describe(
+            "Discovered facts, unexpected behaviors, system quirks, or root causes. " +
+            "Do NOT record passing test counts, linter outputs, or clean git statuses. Omit if empty."
+          ),
+          decided: tool.schema.array(tool.schema.string()).optional().describe(
+            "Architectural choices, trade-offs made, or abandoned/rejected approaches. " +
+            "Do NOT record mechanical code edits, routine renames, or commit actions. Omit if empty."
+          ),
+          open: tool.schema.array(tool.schema.string()).optional().describe(
+            "Unresolved domain ambiguities, pending stakeholder decisions, or external blockers. " +
+            "Do NOT record next-step plan items or workflow actions. Omit if empty."
+          ),
           task: tool.schema.string().describe(
             "Task scope for this invocation. Use 'master' for global context."
           ),

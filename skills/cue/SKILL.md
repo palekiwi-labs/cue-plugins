@@ -190,25 +190,24 @@ For complete command details and options, see `skills/cue/reference/cli.md`.
 
 ## History & Logging (`cue-log`)
 
-Record milestones, technical decisions, dead-ends, and post-commit impacts as
-structured entries in `.cue/<context>/log.md`.
+Record durable milestones, architectural choices, non-obvious discoveries, and
+dead-ends in `.cue/<context>/log.md`.
 
-`log.md` captures the long-term feature horizon: milestones, architectural
-choices, and rationale. Keep entries slim and high-level. Offload deep
-operational scaffolding to companion `trace` artifacts and reference one only
-when it preserves instrumental context for a successor.
+Log immediately after every git commit and whenever an unexpected discovery or
+dead-end occurs during active work. Keep entries high-signal; offload deep
+output to companion `trace` artifacts.
 
-Standard Entry Schema:
+- **Title**: Concise summary of the milestone, commit, or discovery.
+- **Trace**: Optional trace path (`trace/`) for deep evidence or hand-offs.
+- **Found**: Surprising discoveries, edge cases, or system quirks (never test
+  passes or linter output). Omit if empty.
+- **Decided**: Architectural trade-offs, invariants, or abandoned dead-ends
+  (never code diffs or renames). Omit if empty.
+- **Open**: Unresolved domain ambiguities or external blockers (never plan/todo
+  next steps). Omit if empty.
 
-- **Title**: Concise summary of the milestone or event.
-- **Trace**: Optional repository-relative or absolute trace reference. Attach
-  one only when additional successor context is instrumental, especially for
-  hand-offs.
-- **Found**: List of discovered facts or learnings.
-- **Decided**: Technical decisions made.
-- **Open**: Unresolved questions or follow-up items.
-
-Always append a log entry immediately after making git commits, making important discoveries or abandoning failed approaches.
+For routine commits with no new domain learnings or decisions, log only the
+milestone title and omit all bullet arrays.
 
 ## Operational Discipline
 
@@ -247,9 +246,9 @@ Always append a log entry immediately after making git commits, making important
 
 - **DO** discover and inspect artifacts using `cue list` instead of searching `.cue/` directly.
 - **DO** pass `task: "<slug>"` explicitly on all cue tool calls (`cue-add`, `cue-log`, `cue-plan`).
-- **DO** log milestones, decisions, and dead-ends immediately in `.cue/<context>/log.md`.
-- **DO** keep `log.md` entries focused on feature-horizon milestones and reference companion traces for deep output.
+- **DO** log after every commit and during active discovery; omit empty fields.
 - **DO** resolve all open task-scoped `todo` artifacts before marking a task complete.
+- **DON'T** log test passes, linter output, or transient plan next-steps in `log.md`.
 - **DON'T** run `cue switch` or mutate `.cue/HEAD` (owned exclusively by the human operator).
 - **DON'T** search `.cue/` directly with `grep` or `find` (use `cue list`)
 - **DON'T** include changes in `.cue/` in `git commit` commands.
