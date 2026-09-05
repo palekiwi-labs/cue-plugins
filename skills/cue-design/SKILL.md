@@ -8,53 +8,92 @@ description: |
 
 # Design Task Sessions
 
-A design task turns a loose idea into a specification the user is willing
-to commit to. It is a conversation, not a deliverable pipeline.
+A design task turns a loose problem or proposal into an agreed blueprint. It
+is a structured conversation, not a deliverable pipeline or a one-shot spec.
 
-## Purpose and Outputs
+## Core Philosophy
 
-- **Purpose**: Refine a problem into an agreed design through discussion,
-  analysis and critique.
-- **Outputs**: A specification (`spec/index.md`), supporting reference
-  documents (`doc/`), exploration notes (`note/`), deferred items
-  (`todo/`), and milestone history (`log.md`).
-- **Boundaries**: Does not write feature code or create downstream
-  implementation task cards.
+Continuous prose documents force all contained ideas to share a single status.
+During active exploration, this causes drift, premature specification, and
+confusion between exploratory thinking and settled decisions.
+
+A design context isolates ideas into atomic notes, tracks negative constraints
+in a compact invariants file, and defers blueprint assembly until ideas
+converge.
+
+## Artifacts of a Design Context
+
+- `note/invariants.md`
+  The settled constraints. Lists what the design must NOT contradict (not what
+  it must incorporate).
+  - Hard limit: under 40 lines (must fit on a single page).
+  - Membership test: "If we reversed this, what would have to be re-examined?"
+    If nothing downstream breaks, it is a local decision, not an invariant.
+  - Authority: Agents may propose invariants; ONLY the operator promotes one.
+  - Invariants are revisable. Changing an invariant triggers re-evaluation of
+    all dependent ideas.
+
+- `note/ideas/<slug>.md`
+  Atomic idea notes. One idea per file.
+  - Status: reuses standard cue frontmatter (`status: open | complete | closed`).
+    - `open`: Live, under active discussion.
+    - `complete`: Agreed and ready to fold into the final blueprint.
+    - `closed`: Rejected or dropped.
+  - Convention: The first line of body text states the current verdict.
+  - Closed notes state the reopen trigger (what evidence or condition would
+    reopen discussion).
+  - Optional dependency declaration: note dependencies on invariants
+    (e.g., `Depends on: invariant:<name>`).
+
+- `spec/index.md`
+  The blueprint.
+  - Stays empty during exploration.
+  - Assembled from `complete` ideas only when the design has converged.
+
+- `log.md`
+  Durable milestone history. Log key architectural discoveries and session
+  deltas using `cue-log`.
+
+## Discovery and Querying
+
+Do not rely on injecting all idea notes into prompt context. Agents query and
+filter idea notes directly using cue:
+
+- List open ideas: `cue list --type note --filter "status=open"`
+- List completed ideas: `cue list --type note --filter "status=complete"`
+- List rejected ideas: `cue list --type note --filter "status=closed"`
+
+## The Session Loop
+
+1. **Diverge** (Most of the session)
+   - Free brainstorming, critique, and trade-off analysis between operator
+     and agent.
+   - DO NOT classify status, create idea notes, or ask for verdicts mid-flight.
+   - Classifying during brainstorming kills the creative flow.
+
+2. **Harvest** (End of session)
+   - The agent summarizes proposed deltas in one pass:
+     - New idea notes to create for concepts raised.
+     - Status transitions for existing ideas (`open` -> `complete` / `closed`).
+     - Reopen triggers for closed ideas.
+   - The operator confirms or corrects the batch in a single interaction.
+
+3. **Promote** (Rare)
+   - Fundamental constraints that pass the membership test are proposed for
+     `note/invariants.md`.
+   - Promoted ONLY upon explicit confirmation by the operator.
 
 ## Completion
 
-A design task is complete when the user and the agent explicitly agree the
-design has converged.
+A design task is complete when:
+- No ideas remain `open` (all are `complete`, `closed`, or explicitly deferred).
+- `spec/index.md` is assembled from the `complete` ideas and verified.
+- The operator explicitly confirms the design has converged.
 
-Producing a specification does not complete the task. Neither does running
-out of questions. Ask; do not assume.
+## Anti-patterns
 
-## The Specification Is the Working Surface
-
-`spec/index.md` is what the discussion is conducted on, not what it
-produces.
-
-- Create it once the problem statement is settled, not before. On the
-  first exchange you rarely understand enough to write something worth
-  iterating on, and a premature specification anchors the discussion badly.
-- Revise it in place as the design moves. It is expected to change many
-  times.
-- Keep it to intent, scope and requirements. Technical approach belongs in
-  `plan/`, findings in `doc/`.
-
-## Running the Session
-
-- **Open by understanding, not by producing.** Restate the problem in your
-  own words, surface the assumptions and constraints you have inferred,
-  and name the trade-offs you can see.
-- **Ask about real forks.** Put questions where the design could
-  legitimately go more than one way. Do not ask what you can determine by
-  reading the code.
-- **Stop and wait.** After putting questions to the user, wait for the
-  answers. Do not answer them yourself and continue.
-- **Say when you disagree.** If a direction seems wrong, say so and say
-  why. Agreement you do not hold is worthless to the user.
-- **Say when you do not know.** An unanswerable question is a signal to
-  investigate or prototype, not to guess.
-- **Flag drift.** If the scope is growing, name it rather than following
-  it.
+- Writing `spec/index.md` prematurely on the first turn.
+- Storing multiple independent ideas in a single prose note or register.
+- Asking the operator to classify or confirm status after every single exchange.
+- Promoting invariants without explicit operator sign-off.
+- Inventing custom status names instead of using standard cue frontmatter.
