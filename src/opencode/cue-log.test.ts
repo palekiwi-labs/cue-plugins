@@ -21,26 +21,43 @@ describe("cue-log tool schema", () => {
     expect(Object.keys(args)).not.toContain("body")
   })
 
+  test("scopes by context, not by task", async () => {
+    const keys = Object.keys(await logToolArgs())
+    expect(keys).toContain("context")
+    expect(keys).not.toContain("task")
+
+    const schema = tool.schema.object(await logToolArgs())
+    expect(() => schema.parse({ title: "Milestone" })).toThrow()
+  })
+
   test("accepts an optional trace reference", async () => {
     const args = await logToolArgs()
     expect(Object.keys(args)).toContain("trace")
 
+    const address = "palekiwi/palekiwi/cue-platform-direction/trace/handoff.md"
     const schema = tool.schema.object(args)
     const withTrace = schema.parse({
       title: "Milestone",
-      trace: ".cue/task/trace/1788149597-22be1e0/notes.md",
-      task: "master",
+      trace: address,
+      context: "cue-platform-direction",
     })
-    expect(withTrace.trace).toBe(".cue/task/trace/1788149597-22be1e0/notes.md")
+    expect(withTrace.trace).toBe(address)
 
-    const withoutTrace = schema.parse({ title: "Milestone", task: "master" })
+    const withoutTrace = schema.parse({
+      title: "Milestone",
+      context: "cue-platform-direction",
+    })
     expect(withoutTrace.trace).toBeUndefined()
   })
 
   test("rejects a non-string trace", async () => {
     const schema = tool.schema.object(await logToolArgs())
     expect(() =>
-      schema.parse({ title: "Milestone", task: "master", trace: 42 })
+      schema.parse({
+        title: "Milestone",
+        context: "cue-platform-direction",
+        trace: 42,
+      })
     ).toThrow()
   })
 })

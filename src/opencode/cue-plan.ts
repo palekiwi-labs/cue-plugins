@@ -1,46 +1,38 @@
 import { type Plugin, tool } from "@opencode-ai/plugin"
-import { isAbsolute, join, resolve } from "node:path"
-import { homedir, tmpdir } from "node:os"
+import { join } from "node:path"
+import { tmpdir } from "node:os"
+import { contextFlag, dirFlag, storeFlag } from "./cue-args"
 import { frontmatterFlags } from "./frontmatter"
-
-function resolveDir(dir: string | undefined, cwd: string): string[] {
-  if (!dir) {
-    return []
-  }
-  let expanded = dir
-  if (expanded.startsWith("~/") || expanded === "~") {
-    expanded = homedir() + expanded.slice(1)
-  }
-  if (isAbsolute(expanded)) {
-    return ["--dir", expanded]
-  }
-  return ["--dir", resolve(cwd, expanded)]
-}
 
 const cuePlanTool = tool({
   description: "Create a new plan artifact.",
   args: {
-    filename: tool.schema.string().describe("Name of the file (e.g., 'slice1.md')"),
-    content: tool.schema.string().describe("Full content of the artifact"),
-    root: tool.schema.boolean().default(false).describe(
-      "Set to true for master plans (e.g. index.md). Set to false for executive plans " +
-      "that reference a specific phase or slice from master plans."
+    filename: tool.schema.string().describe(
+      "Name of the file (e.g. 'lane-a-bridge.md'). Must not contain path separators."
     ),
+    content: tool.schema.string().describe("Full content of the artifact"),
     status: tool.schema.enum(["open", "in-progress", "complete", "closed"]).optional().default("open").describe(
       "Status of the plan"
     ),
     parent: tool.schema.string().optional().describe(
-      "Parent master plan path (e.g. 'plan/index.md'). Emitted as `parent:` frontmatter."
+      "Canonical address of the goal this plan serves, normally a task " +
+      "(e.g. 'palekiwi/palekiwi/cue-review/task/scaffold-crate.md'). Omit only " +
+      "for a context-level master plan, where the context has one overriding goal."
     ),
     refs: tool.schema.array(tool.schema.string()).default([]).describe(
-      "Artifact paths (relative to .cue/) this plan links to. Emitted as a `refs:` YAML list."
+      "Canonical addresses (<scope>/<context>/<type>/<name>) this plan links to. " +
+      "Emitted as a `refs:` YAML list."
     ),
-    task: tool.schema.string().describe(
-      "Task scope for this invocation. Use 'master' for global context."
+    context: tool.schema.string().describe(
+      "Context slug to write into, within the repository's scope. Required: " +
+      "cue has no default or fallback context and a write with none fails."
     ),
     dir: tool.schema.string().optional().describe(
       "Run cue as if started in this directory instead of the session directory. " +
-      "Mirrors the git -C convention; use to operate on another project's .cue/ directory."
+      "Mirrors the git -C convention; use to write into another repository's scope."
+    ),
+    store: tool.schema.string().optional().describe(
+      "Root of the cue store, overriding $CUE_STORE. Rarely needed."
     ),
   },
   async execute(args, context) {
@@ -48,9 +40,6 @@ const cuePlanTool = tool({
     try {
       await Bun.write(tempPath, args.content)
 
-      const dirFlag = resolveDir(args.dir, context.directory)
-      const taskFlag = args.task ? ["--task", args.task] : []
-      const rootFlag = args.root ? ["--root"] : []
       const frontmatter: Record<string, string | string[]> = {
         status: args.status ?? "open",
         refs: args.refs,
@@ -58,9 +47,14 @@ const cuePlanTool = tool({
       if (args.parent) {
         frontmatter.parent = args.parent
       }
-      const fmFlags = frontmatterFlags(frontmatter)
+      const flags = [
+        ...dirFlag(args.dir, context.directory),
+        ...storeFlag(args.store),
+        ...contextFlag(args.context),
+        ...frontmatterFlags(frontmatter),
+      ]
 
-      const output = await Bun.$`cue add ${dirFlag} --type plan ${rootFlag} ${taskFlag} ${fmFlags} --file ${tempPath} ${args.filename}`
+      const output = await Bun.$`cue add ${flags} --type plan --file ${tempPath} ${args.filename}`
         .cwd(context.directory)
         .text()
 

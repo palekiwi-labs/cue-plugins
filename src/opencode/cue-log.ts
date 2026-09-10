@@ -1,21 +1,8 @@
 import { type Plugin, tool } from "@opencode-ai/plugin"
-import { isAbsolute, join, resolve } from "node:path"
-import { homedir, tmpdir } from "node:os"
+import { join } from "node:path"
+import { tmpdir } from "node:os"
+import { contextFlag, dirFlag, storeFlag } from "./cue-args"
 import { buildReport, contextNote, estimateContextTokens } from "./context-usage"
-
-function resolveDir(dir: string | undefined, cwd: string): string[] {
-  if (!dir) {
-    return []
-  }
-  let expanded = dir
-  if (expanded.startsWith("~/") || expanded === "~") {
-    expanded = homedir() + expanded.slice(1)
-  }
-  if (isAbsolute(expanded)) {
-    return ["--dir", expanded]
-  }
-  return ["--dir", resolve(cwd, expanded)]
-}
 
 export const CueLogPlugin: Plugin = async (input) => {
   // Append a one-line context state note to the tool output so agents
@@ -43,7 +30,8 @@ export const CueLogPlugin: Plugin = async (input) => {
         args: {
           title: tool.schema.string().describe("Concise summary of the milestone, commit, or discovery."),
           trace: tool.schema.string().optional().describe(
-            "Repository-relative or absolute reference to a trace artifact. " +
+            "Canonical address of a trace artifact " +
+            "(e.g. 'palekiwi/palekiwi/cue-platform-direction/trace/handoff.md'). " +
             "Attach one only when a successor needs context beyond the " +
             "found/decided/open bullets, such as at a hand-off."
           ),
@@ -59,18 +47,26 @@ export const CueLogPlugin: Plugin = async (input) => {
             "Unresolved domain ambiguities, pending stakeholder decisions, or external blockers. " +
             "Do NOT record next-step plan items or workflow actions. Omit if empty."
           ),
-          task: tool.schema.string().describe(
-            "Task scope for this invocation. Use 'master' for global context."
+          context: tool.schema.string().describe(
+            "Context slug to log against, within the repository's scope. " +
+            "Required: cue has no default or fallback context and a write " +
+            "with none fails. A context's recency is the newest entry in its " +
+            "log, so logging is what keeps it findable."
           ),
           dir: tool.schema.string().optional().describe(
             "Run cue as if started in this directory instead of the session directory. " +
-            "Mirrors the git -C convention; use to operate on another project's .cue/ directory."
+            "Mirrors the git -C convention; use to log against another repository's scope."
+          ),
+          store: tool.schema.string().optional().describe(
+            "Root of the cue store, overriding $CUE_STORE. Rarely needed."
           ),
         },
         async execute(args, context) {
           const tempPath = join(tmpdir(), `cue-log-${Date.now()}.json`)
 
-          // Create the JSON payload for the cue CLI
+          // Create the JSON payload for the cue CLI. Absent fields are
+          // dropped by JSON.stringify rather than serialised as null, which
+          // cue's entry reader rejects for the array fields.
           const payload = {
             title: args.title,
             trace: args.trace,
@@ -81,9 +77,12 @@ export const CueLogPlugin: Plugin = async (input) => {
 
           try {
             await Bun.write(tempPath, JSON.stringify(payload))
-            const dirFlag = resolveDir(args.dir, context.directory)
-            const taskFlag = args.task ? ["--task", args.task] : []
-            await Bun.$`cue log add ${dirFlag} ${taskFlag} --file ${tempPath}`.cwd(context.directory).quiet()
+            const flags = [
+              ...dirFlag(args.dir, context.directory),
+              ...storeFlag(args.store),
+              ...contextFlag(args.context),
+            ]
+            await Bun.$`cue log add ${flags} --file ${tempPath}`.cwd(context.directory).quiet()
             const note = await contextStateLine(context.sessionID)
             return note ? `Logged milestone: ${args.title}\n${note}` : `Logged milestone: ${args.title}`
           } finally {

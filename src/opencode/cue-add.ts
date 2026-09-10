@@ -1,62 +1,57 @@
 import { type Plugin, tool } from "@opencode-ai/plugin"
-import { isAbsolute, join, resolve } from "node:path"
-import { homedir, tmpdir } from "node:os"
+import { join } from "node:path"
+import { tmpdir } from "node:os"
+import { contextFlag, dirFlag, groupFlag, storeFlag } from "./cue-args"
 import { frontmatterFlags } from "./frontmatter"
 
-function resolveDir(dir: string | undefined, cwd: string): string[] {
-  if (!dir) {
-    return []
-  }
-  let expanded = dir
-  if (expanded.startsWith("~/") || expanded === "~") {
-    expanded = homedir() + expanded.slice(1)
-  }
-  if (isAbsolute(expanded)) {
-    return ["--dir", expanded]
-  }
-  return ["--dir", resolve(cwd, expanded)]
-}
-
-const ROOT_DEFAULT_TYPES = new Set(["spec", "note", "doc", "plan"])
-
-export function shouldUseRoot(type: string, root?: boolean): boolean {
-  if (typeof root === "boolean") {
-    return root
-  }
-  return ROOT_DEFAULT_TYPES.has(type)
-}
-
 const cueAddTool = tool({
-  description: "Create a new cue artifact (spec, doc, trace, etc.).",
+  description: "Create a new cue artifact (spec, plan, note, task, trace, tmp).",
   args: {
-    type: tool.schema.string().default("spec").describe(
-      "Type of the artifact. Standard types: spec, plan, todo, trace, tmp, bin, doc. " +
-      "Custom types may also be used if configured in cue.json."
+    type: tool.schema.enum([
+      "spec",
+      "plan",
+      "note",
+      "task",
+      "trace",
+      "tmp",
+      "bin",
+    ]).default("spec").describe(
+      "Type of the artifact. spec is WHY, plan is HOW, task is WHAT, note is " +
+      "idea capture; trace is an artifact about a revision (reviews, " +
+      "hand-offs, diagnostics) and is stamped with repo_id and commit_hash; " +
+      "tmp holds arbitrary files and requires a group; bin holds JSON."
     ),
     filename: tool.schema.string().describe(
-      "Name of the file (e.g., 'research-report.md'). Extensionless names get '.md' " +
-      "appended for markdown types (doc, note, plan, spec, task, todo)."
+      "Name of the file (e.g. 'migration-report.md'). Must not contain path " +
+      "separators. Extensionless names get '.md' appended for markdown types."
     ),
     content: tool.schema.string().describe("Full content of the artifact"),
-    root: tool.schema.boolean().optional().describe(
-      "When true, saves flat at <type>/<filename> — the root of the type directory. " +
-      "Use for stable anchor documents that are updated in place. " +
-      "Default is type-aware: true for spec, note, doc, plan; false for todo, trace, tmp."
-    ),
     frontmatter: tool.schema.record(
       tool.schema.string(),
       tool.schema.union([tool.schema.string(), tool.schema.array(tool.schema.string())])
     ).optional().describe(
-      "Frontmatter fields to prepend to the artifact (e.g. { status: 'open', priority: '1' }). " +
+      "Frontmatter fields to prepend to the artifact (e.g. { status: 'open', priority: 'high' }). " +
       "A value may be a string or an array of strings; an array becomes a YAML list " +
-      "(e.g. { refs: ['master/spec/index.md'] })."
+      "(e.g. { refs: ['palekiwi/palekiwi/cue-review/spec/index.md'] }). " +
+      "created_at is stamped by cue; never set it here."
     ),
-    task: tool.schema.string().describe(
-      "Task scope for this invocation. Use 'master' for global context."
+    context: tool.schema.string().describe(
+      "Context slug to write into, within the repository's scope. Required: " +
+      "cue has no default or fallback context and a write with none fails. " +
+      "Discover slugs with `cue context list`."
+    ),
+    group: tool.schema.string().optional().describe(
+      "Group name for tmp artifacts, required when type is tmp. Files land in " +
+      "tmp/<created_at>-<commit_hash>-<group>/, reusing an existing group at " +
+      "the same commit."
     ),
     dir: tool.schema.string().optional().describe(
       "Run cue as if started in this directory instead of the session directory. " +
-      "Mirrors the git -C convention; use to operate on another project's .cue/ directory."
+      "Mirrors the git -C convention; use to write into another repository's scope."
+    ),
+    store: tool.schema.string().optional().describe(
+      "Root of the cue store, overriding $CUE_STORE. Rarely needed; the " +
+      "devshell exports the store every sandbox shares."
     ),
   },
   async execute(args, context) {
@@ -66,13 +61,15 @@ const cueAddTool = tool({
       await Bun.write(tempPath, args.content)
 
       // 2. Tell cue to read from that file (Safe, content is not a CLI arg)
-      const dirFlag = resolveDir(args.dir, context.directory)
-      const isRoot = shouldUseRoot(args.type, args.root)
-      const rootFlag = isRoot ? ["--root"] : []
-      const taskFlag = args.task ? ["--task", args.task] : []
-      const fmFlags = args.frontmatter ? frontmatterFlags(args.frontmatter) : []
+      const flags = [
+        ...dirFlag(args.dir, context.directory),
+        ...storeFlag(args.store),
+        ...contextFlag(args.context),
+        ...groupFlag(args.group),
+        ...(args.frontmatter ? frontmatterFlags(args.frontmatter) : []),
+      ]
 
-      const output = await Bun.$`cue add ${dirFlag} --type ${args.type} ${rootFlag} ${taskFlag} ${fmFlags} --file ${tempPath} ${args.filename}`
+      const output = await Bun.$`cue add ${flags} --type ${args.type} --file ${tempPath} ${args.filename}`
         .cwd(context.directory)
         .text()
 

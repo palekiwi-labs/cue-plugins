@@ -1,26 +1,63 @@
 import { describe, expect, test } from "bun:test"
-import { shouldUseRoot } from "./cue-add"
+import { tool, type PluginInput } from "@opencode-ai/plugin"
+import { CueAddPlugin } from "./cue-add"
 
-describe("shouldUseRoot", () => {
-  test("defaults to true for anchor types: spec, note, doc, plan", () => {
-    expect(shouldUseRoot("spec")).toBe(true)
-    expect(shouldUseRoot("note")).toBe(true)
-    expect(shouldUseRoot("doc")).toBe(true)
-    expect(shouldUseRoot("plan")).toBe(true)
+async function addToolArgs() {
+  const hooks = await CueAddPlugin({} as unknown as PluginInput)
+  const definition = hooks.tool?.["cue-add"]
+  if (!definition) {
+    throw new Error("cue-add tool is not registered")
+  }
+  return definition.args
+}
+
+describe("cue-add tool schema", () => {
+  test("scopes by context, not by task", async () => {
+    const keys = Object.keys(await addToolArgs())
+    expect(keys).toContain("context")
+    expect(keys).not.toContain("task")
   })
 
-  test("defaults to false for point-in-time types: todo, trace, tmp, bin, custom", () => {
-    expect(shouldUseRoot("todo")).toBe(false)
-    expect(shouldUseRoot("trace")).toBe(false)
-    expect(shouldUseRoot("tmp")).toBe(false)
-    expect(shouldUseRoot("bin")).toBe(false)
-    expect(shouldUseRoot("custom")).toBe(false)
+  test("no longer exposes the deleted root flag", async () => {
+    expect(Object.keys(await addToolArgs())).not.toContain("root")
   })
 
-  test("respects explicit root overrides when root boolean is provided", () => {
-    expect(shouldUseRoot("spec", false)).toBe(false)
-    expect(shouldUseRoot("note", false)).toBe(false)
-    expect(shouldUseRoot("todo", true)).toBe(true)
-    expect(shouldUseRoot("trace", true)).toBe(true)
+  test("context is required, since cue has no fallback context", async () => {
+    const schema = tool.schema.object(await addToolArgs())
+    expect(() => schema.parse({ filename: "index.md", content: "x" })).toThrow()
+  })
+
+  test("accepts the seven live artifact types", async () => {
+    const schema = tool.schema.object(await addToolArgs())
+    for (const type of ["spec", "plan", "note", "task", "trace", "tmp", "bin"]) {
+      const parsed = schema.parse({
+        type,
+        filename: "a.md",
+        content: "x",
+        context: "demo",
+      })
+      expect(parsed.type).toBe(type)
+    }
+  })
+
+  test("rejects the abolished doc and todo types", async () => {
+    const schema = tool.schema.object(await addToolArgs())
+    for (const type of ["doc", "todo"]) {
+      expect(() =>
+        schema.parse({ type, filename: "a.md", content: "x", context: "demo" })
+      ).toThrow()
+    }
+  })
+
+  test("carries an optional group for tmp artifacts", async () => {
+    const schema = tool.schema.object(await addToolArgs())
+    const parsed = schema.parse({
+      type: "tmp",
+      filename: "run.log",
+      content: "x",
+      context: "demo",
+      group: "ci",
+    })
+    expect(parsed.group).toBe("ci")
   })
 })

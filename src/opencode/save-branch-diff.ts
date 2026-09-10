@@ -59,8 +59,10 @@ const saveBranchDiffTool = tool({
     "to the session directory; pass dir to target another worktree of the " +
     "repository.",
   args: {
-    task: tool.schema.string().describe(
-      "Task scope for this invocation. Use 'master' for global context.",
+    context: tool.schema.string().describe(
+      "Context slug to save the diff under, within the repository's scope. " +
+      "Required: cue has no default or fallback context and a write with " +
+      "none fails.",
     ),
     dir: tool.schema.string().optional().describe(
       "Directory whose branch should be diffed. Defaults to the session " +
@@ -103,14 +105,21 @@ const saveBranchDiffTool = tool({
       }
     }
 
-    // 5. Save to cue via a temp file (content never hits a shell);
-    //    --task scopes explicitly instead of relying on .cue/HEAD
+    // 5. Save to cue via a temp file (content never hits a shell); context
+    //    is passed explicitly rather than resolved from the operator's
+    //    branch association.
+    //
+    //    The diff stays a `tmp` artifact rather than becoming a `trace`,
+    //    even though it is an artifact about a revision: cue prepends YAML
+    //    frontmatter to every named artifact, which would corrupt the patch.
+    //    `tmp` groups by commit hash, so reruns at one commit overwrite in
+    //    place and separate cleanly across commits.
     const filename = diffFilename(branch)
     const tempPath = join(tmpdir(), `branch-diff-${Date.now()}.diff`)
     try {
       await Bun.write(tempPath, diffContent)
 
-      const output = await Bun.$`cue add --type tmp --root --force --task ${args.task} --file ${tempPath} ${filename}`
+      const output = await Bun.$`cue add --type tmp --group branch-diff --force --context ${args.context} --file ${tempPath} ${filename}`
         .cwd(targetDir)
         .quiet()
         .text()
