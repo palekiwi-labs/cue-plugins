@@ -2,7 +2,6 @@ import { type Plugin, tool } from "@opencode-ai/plugin"
 import { join } from "node:path"
 import { tmpdir } from "node:os"
 import { contextFlag, dirFlag, storeFlag } from "./cue-args"
-import { traceReference } from "./cue-log-helpers"
 import { buildReport, contextNote, estimateContextTokens } from "./context-usage"
 
 export const CueLogPlugin: Plugin = async (input) => {
@@ -31,11 +30,11 @@ export const CueLogPlugin: Plugin = async (input) => {
         args: {
           title: tool.schema.string().describe("Concise summary of the milestone, commit, or discovery."),
           trace: tool.schema.string().optional().describe(
-            "Trace artifact in the same context, as a context-relative path " +
-            "(e.g. 'trace/handoff.md'). A canonical address or an absolute " +
-            "path is accepted too. Attach one only when a successor needs " +
-            "context beyond the found/decided/open bullets, such as at a " +
-            "hand-off."
+            "Canonical address of a trace artifact " +
+            "(e.g. 'palekiwi/palekiwi/cue-platform-direction/trace/handoff.md'), " +
+            "resolved against the store root. Attach one only when a " +
+            "successor needs context beyond the found/decided/open bullets, " +
+            "such as at a hand-off."
           ),
           found: tool.schema.array(tool.schema.string()).optional().describe(
             "Discovered facts, unexpected behaviors, system quirks, or root causes. " +
@@ -71,7 +70,7 @@ export const CueLogPlugin: Plugin = async (input) => {
           // cue's entry reader rejects for the array fields.
           const payload = {
             title: args.title,
-            trace: traceReference(args.trace),
+            trace: args.trace,
             found: args.found,
             decided: args.decided,
             open: args.open,
