@@ -1,5 +1,5 @@
 ---
-description: Initialize session context for a specified task
+description: Initialize session context for a specified cue context
 ---
 
 <user-instructions>
@@ -10,9 +10,15 @@ PWD: !`pwd`
 
 !`$HOME/.config/opencode/scripts/git-context.sh`
 
-!`cue status --task "$1" 2>/dev/null`
+<status>
+!`cue status --context "$1" 2>/dev/null`
+</status>
 
-!`cue context render --task "$1" --profile default 2>/dev/null`
+<log>
+!`cue log list --context "$1" --format md`
+</log>
+
+!`cue render --context "$1" plan/index.md`
 
 Load the `cue` skill.
 

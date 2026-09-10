@@ -1,5 +1,5 @@
 ---
-description: Initialize session context and resume active task
+description: Initialize session context and resume the active context
 ---
 
 <user-instructions>
@@ -10,9 +10,15 @@ PWD: !`pwd`
 
 !`$HOME/.config/opencode/scripts/git-context.sh`
 
+<status>
 !`cue status 2>/dev/null`
+</status>
 
-!`cue context render --profile default 2>/dev/null`
+<log>
+!`cue log list --format md`
+</log>
+
+!`cue render plan/index.md`
 
 Load the `cue` skill.
 
