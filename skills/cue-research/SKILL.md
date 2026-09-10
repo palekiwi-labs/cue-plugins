@@ -1,8 +1,8 @@
 ---
 name: cue-research
 description: |
-  Use when working on a research task, or when performing technical exploration
-  and investigation in any session.
+  Use when the session mode is research, or when performing technical
+  exploration and investigation in any session.
 ---
 
 # Research Sessions & Exploration

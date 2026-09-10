@@ -1,15 +1,15 @@
 ---
 name: cue-learn
 description: |
-  Use when working on a task whose kind is learn, when the user wants to be
+  Use when the session mode is learn, when the user wants to be
   tutored or mentored rather than have work done for them.
 ---
 
-# Learn Task Sessions
+# Learn Sessions
 
-A learn task grows the user's capability, not the codebase. It is a meta
-kind: it orbits other work rather than belonging to the delivery pipeline,
-typically opened as a parallel context to a build or design task whose
+A learn session grows the user's capability, not the codebase. It is a meta
+mode: it orbits other work rather than belonging to the delivery pipeline,
+typically opened as a parallel context to a build or design context whose
 needs motivated the learning.
 
 ## Posture

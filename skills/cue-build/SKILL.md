@@ -1,20 +1,20 @@
 ---
 name: cue-build
 description: |
-  Use when working on a task whose kind is build, or executing an implementation
+  Use when the session mode is build, or when executing an implementation
   plan.
 ---
 
-# Build Task Sessions
+# Build Sessions
 
-A build task delivers working, verified code.
+A build session delivers working, verified code.
 
 ## Purpose and Outputs
 
 - **Purpose**: Implement features, fix bugs, and write tests against an
   agreed specification or plan.
-- **Outputs**: Code changes, passing tests, executive plans (`plan/`),
-  deferred items (`todo/`), and milestone history (`log.md`).
+- **Outputs**: Code changes, passing tests, plans (`plan/`), deferred
+  obligations as tasks (`task/`), and milestone history (the context log).
 
 ## Verification & Manual QA
 
@@ -26,7 +26,7 @@ Implementation outcomes are verified against the agreed specification (`spec/ind
 ## Boundaries
 
 - Implement the requested scope only. Capture out-of-scope discoveries as
-  `todo` or `note` artifacts.
+  `note` or `task` artifacts.
 
-<!-- Placeholder. Extend with behavioural guidance as this kind is
+<!-- Placeholder. Extend with behavioural guidance as this mode is
 exercised in practice. -->

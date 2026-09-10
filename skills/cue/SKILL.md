@@ -35,9 +35,14 @@ decision.
 
 Bounded priority classification: `priority: critical|high|normal|low`.
 
-### `kind:`
+### `kind:` and `mode:`
 
-Task category classification: `kind: research|design|build|review|coord|learn` (see `task` contract below).
+Context-level fields, not task-level ones.
+
+`kind: work|coord|reference` says what ends a context. `mode:
+research|design|build|review|learn` is an advisory default for the
+behavioural contract a session in that context adopts (see "Session Mode"
+below).
 
 ### `parent:`
 
@@ -106,21 +111,31 @@ and cross-task contamination during concurrent sessions:
 - Contains high-level description, problem statement, or initiative context.
 - Tracked on master across feature branches via `branch:` frontmatter list.
 
-#### Task Categories (`kind:`)
+## Session Mode (`mode:`)
 
-Tasks declare operational expectations via `kind: research|design|build|review|coord|learn`:
+A session's behavioural contract comes from its **mode**, not from the task
+it is working on. Mode is a property of the session; the context carries an
+advisory default in its `mode:` field.
 
-- **`kind: research`**: Exploration & feasibility analysis.
-- **`kind: design`**: Specification & context setup.
-- **`kind: build`**: Feature implementation & test execution.
-- **`kind: review`**: Code review & evaluation trace generation.
-- **`kind: coord`**: Multi-component or cross-repository orchestration.
-- **`kind: learn`**: Tutoring & capability growth for the user.
+- **`research`**: Exploration & feasibility analysis.
+- **`design`**: Specification, blueprinting & context setup.
+- **`build`**: Feature implementation & test execution.
+- **`review`**: Code review & evaluation trace generation.
+- **`learn`**: Tutoring & capability growth for the user.
 
-Each kind has a corresponding skill carrying its behavioural contract, expected
-outputs, and completion rule. When working on a task, load the skill matching
-its kind: `cue-research`, `cue-design`, `cue-build`, `cue-review`, `cue-coord`,
-or `cue-learn`.
+Each mode has a corresponding skill carrying its behavioural contract,
+expected outputs, and completion rule: `cue-research`, `cue-design`,
+`cue-build`, `cue-review`, `cue-learn`.
+
+Resolve the mode in this order and load the matching skill:
+
+1. An explicit instruction from the operator for this session.
+2. The active context's `mode:` field (`cue status` prints it).
+3. Otherwise infer it from the work at hand and say which mode was assumed.
+
+The context's `kind:` (`work|coord|reference`) selects no skill. It says what
+ends the context, which is an archival question rather than a behavioural
+one.
 
 ### `spec` (WHY)
 

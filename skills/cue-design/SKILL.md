@@ -1,14 +1,14 @@
 ---
 name: cue-design
 description: |
-  Use when working on a task whose kind is design, when running a collaborative
+  Use when the session mode is design, when running a collaborative
   design or specification session, or when the user asks to discuss and refine
   an idea before building it.
 ---
 
-# Design Task Sessions
+# Design Sessions
 
-A design task turns a loose problem or proposal into an agreed blueprint. It
+A design session turns a loose problem or proposal into an agreed blueprint. It
 is a structured conversation, not a deliverable pipeline or a one-shot spec.
 
 ## Core Philosophy
