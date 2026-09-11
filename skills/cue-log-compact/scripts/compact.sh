@@ -56,7 +56,7 @@ fi
 
 # Select contiguous files in range [FROM.json .. TO.json]
 mapfile -t target_files < <(for f in "${all_files[@]}"; do
-  if [[ "$f" >= "$FROM.json" && "$f" <= "$TO.json" ]]; then
+  if [[ ! "$f" < "$FROM.json" && ! "$f" > "$TO.json" ]]; then
     echo "$f"
   fi
 done)
