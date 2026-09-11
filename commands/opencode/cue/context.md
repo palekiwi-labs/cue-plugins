@@ -23,6 +23,7 @@ PWD: !`pwd`
 Load the `cue` skill.
 
 **Mandatory Instructions:**
+
 1. Analyze the project intent and recent progress provided in the injected artifacts above.
 2. Provide a lightning-fast, structured summary (Intent, Status, Next Steps).
 3. **DO NOT** perform any further research, git commands, or file reads.

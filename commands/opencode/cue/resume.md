@@ -18,11 +18,12 @@ PWD: !`pwd`
 !`cue log list --format md`
 </log>
 
-!`cue render plan/index.md`
+!`cue render spec/index.md plan/index.md`
 
 Load the `cue` skill.
 
 **Mandatory Instructions:**
+
 1. Analyze the project intent and recent progress provided in the injected artifacts above.
 2. Provide a lightning-fast, structured summary (Intent, Status, Next Steps).
 3. **DO NOT** perform any further research, git commands, or file reads.
