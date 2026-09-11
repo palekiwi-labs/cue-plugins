@@ -42,9 +42,10 @@ Before teaching anything, establish two things with the user:
 Keep state light; most of the work is conversation.
 
 - Record demonstrated understanding, corrected misconceptions, and
-  disclosed prior knowledge in `log.md` so later sessions calibrate.
+  disclosed prior knowledge in the context log via `cue-log` so later sessions
+  calibrate.
 - Settle the mission in `spec/index.md` once it is agreed.
-- Treat `plan/` as a curriculum and `todo/` as exercises, but only when
+- Treat `plan/` as a curriculum and exercises, but only when
   the scope warrants it. Do not push artifacts the conversation does not
   need.
 

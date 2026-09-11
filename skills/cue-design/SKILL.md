@@ -50,7 +50,7 @@ converge.
   - Stays empty during exploration.
   - Assembled from `complete` ideas only when the design has converged.
 
-- `log.md`
+- The context log (`log/`)
   Durable milestone history. Log key architectural discoveries and session
   deltas using `cue-log`.
 
@@ -59,9 +59,9 @@ converge.
 Do not rely on injecting all idea notes into prompt context. Agents query and
 filter idea notes directly using cue:
 
-- List open ideas: `cue list --type note --filter "status=open"`
-- List completed ideas: `cue list --type note --filter "status=complete"`
-- List rejected ideas: `cue list --type note --filter "status=closed"`
+- List open ideas: `cue list --context <slug> --type note --filter "status=open"`
+- List completed ideas: `cue list --context <slug> --type note --filter "status=complete"`
+- List rejected ideas: `cue list --context <slug> --type note --filter "status=closed"`
 
 ## The Session Loop
 

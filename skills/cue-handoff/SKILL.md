@@ -27,9 +27,9 @@ failure.
 
 1. **Stop new work**: finish the current atomic step (commit and log), or
    safely back out of half-broken edits. Start nothing new.
-2. **Reconcile plan and todos**: mark completed items `- [x]`; ensure
-   partially done items state remaining sub-items. Resolve or explicitly
-   re-scope open `todo` artifacts.
+2. **Reconcile plans and tasks**: mark completed items `- [x]`; ensure
+   partially done items state remaining sub-items. Ensure any deferred
+   obligations are captured as tasks (`task/`).
 3. **Persist a hand-off trace**:
    - Reference existing artifacts (specs, plans, logs) by path instead of
      duplicating their content.

@@ -17,31 +17,32 @@ specifications.
   hypotheses, and answer technical unknowns.
 - **Outputs**:
   - **Diagnostic Traces (`trace/`)**: Raw evidence, benchmark logs, CLI
-    outputs, error logs, reproduction steps, and point-in-time observation
-    dumps.
-  - **Durable Documentation (`doc/`)**: Synthesized findings, trade-off
+    outputs, error logs, reproduction steps, and revision-specific findings
+    (stamped with `repo_id` and `commit_hash`).
+  - **Durable Notes (`note/`)**: Synthesized findings, trade-off
     analyses, architecture reference, tool/crate evaluations, and decision
-    context.
+    context (`note/<name>.md`).
 
-### When to Use `trace/` vs `doc/`
+### When to Use `trace/` vs `note/`
 
-- **`trace/` — Raw Evidence & Observations**:
-  - Point-in-time snapshots captured during active discovery
-- **`doc/` — Synthesized & Durable Knowledge**:
-  - Stable, structured reference documents (`doc/<name>.md`).
+- **`trace/` — Raw Evidence & Revision Observations**:
+  - Point-in-time snapshots captured during active discovery, benchmark runs,
+    or commit inspections.
+- **`note/` — Synthesized & Durable Knowledge**:
+  - Stable, structured reference documents (`note/<name>.md`).
   - Distills raw traces and learnings into durable knowledge (e.g.,
     architecture breakdowns, library comparisons, design trade-offs)
-    intended to guide future tasks across sessions.
+    intended to guide future work across sessions.
 
 ## Prior Context Discovery
 
 Before opening new research paths, check if relevant research or context
 already exists to avoid redundant work:
 
-1. **Current Task Context**: Query existing artifacts for the active task
-   (`cue list --task <slug> -t doc`, `cue list --task <slug> -t trace`).
-2. **Project-Wide Store**: Search across all tasks and root artifacts
-   (`cue list -a -t doc`, `cue list -a -t trace`).
+1. **Current Context**: Query existing artifacts for the active context
+   (`cue list --context <slug> -t note`, `cue list --context <slug> -t trace`).
+2. **Repository Scope**: Search across all contexts in the repository scope
+   (`cue list -t note`, `cue list -t trace`).
 
 **Code Drift Caution**: Treat existing artifacts as valuable orientation
 and hints, but always verify critical findings against current source code as

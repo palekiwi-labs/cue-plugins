@@ -5,111 +5,213 @@ description: Manage context, memory and cross-session continuity using the cue p
 
 # Agent Memory System (cue)
 
-This skill provides a structured protocol for managing context and continuity across agent sessions using a dedicated `.cue/` directory structure.
+This skill provides a structured protocol for managing context and continuity
+across agent sessions using cue's central store architecture.
 
 ## Core Philosophy
 
-The system is organized around five altitudes:
+Context is the base unit of cue. A context is a container for related
+information with its own identity, character, and memory. Everything else
+in cue is an artifact inside a context.
 
-- **WHAT** - `task/`: the primary unit of work and kanban board card. Lives exclusively on the master branch.
-- **WHY** - `spec/`: feature or project specification. Defines what should be true.
-- **HOW** - `plan/`: technical approach. Subordinate to a `task`. Contains step-by-step progress checkboxes.
-- **DEFER** - `todo/`: deferred actions, QA checklists, or decision points auxiliary to a `task` or `plan`. Must be resolved before task completion.
-- **THINK** - `note/`: spontaneous idea capture and conversation anchors. Thoughts outside active work waiting to be examined. Dissolves into its outcome artifact once addressed.
+The system is organized around four altitudes:
+
+- **WHAT** - `task/`: the primary unit of work. Defined by a goal and a
+  completion condition. Namespaced inside a context.
+- **WHY** - `spec/`: context or feature specification (`spec/index.md`).
+  Defines intent, scope, and what should be true.
+- **HOW** - `plan/`: technical approach (`plan/<name>.md`). Subordinate to a
+  specific task goal (or a context-level master plan). Contains step-by-step
+  progress checkboxes.
+- **THINK** - `note/`: idea capture and conversation anchors (`note/<name>.md`
+  or nested notes such as `note/ideas/<slug>.md`).
+
+Alongside these four altitudes, a context holds:
+
+- **`trace/`**: artifacts about a revision (reviews, walkthroughs, hand-offs,
+  diagnostics) stamped with `repo_id` and `commit_hash`.
+- **`bin/`**: structured JSON artifacts and durable executables.
+- **`tmp/`**: path-encoded ephemeral data and external outputs
+  (`tmp/<created_at>-<commit_hash>/<filename>`).
+- **`log/`**: per-entry chronological milestone stream
+  (`log/<timestamp>.json`).
+
+Removed types:
+- `todo`: checklists are plans (`plan/`); single deferred obligations are
+  tasks (`task/`).
+- `doc`: synthesized knowledge lives in `note/` or `spec/`; revision-specific
+  artifacts live in `trace/`.
 
 ## Frontmatter Management
 
-Markdown artifacts in `cue` use YAML frontmatter as the single source of truth for metadata. Frontmatter MUST be preserved on edits.
+Markdown artifacts in `cue` use YAML frontmatter as the single source of
+truth for metadata. Cue is the sole writer of frontmatter; clients pass
+structured fields and never author raw YAML. Frontmatter MUST be preserved
+on edits.
 
 ### `status:`
 
-Artifacts track lifecycle status: `status: inbox|open|in-progress|complete|closed`.
+Artifacts track lifecycle status: `status: open|in-progress|complete|closed`.
 
-`inbox` is the intake/triage state: new tasks created through tooling
-default to `inbox` and are promoted by the operator to `open` (accepted)
-or `in-progress` (active work) once triaged. Other artifact types start
-at `open`. Never auto-promote an `inbox` task; triage is an operator
-decision.
+Status is declared on tasks and plans only. Contexts carry NO status field
+(see below).
+
+The legacy `inbox` status is removed: captured ideas become notes, and tasks
+are created deliberately with defined goals, starting at `open`.
 
 ### `priority:`
 
-Bounded priority classification: `priority: critical|high|normal|low`.
+Bounded priority classification on tasks:
+`priority: critical|high|normal|low`. Priority is the only scheduling field.
+Contexts carry no priority field.
 
 ### `kind:` and `mode:`
 
-Context-level fields, not task-level ones.
+Context-level fields on `context.md`, not artifact fields:
 
-`kind: work|coord|reference` says what ends a context. `mode:
-research|design|build|review|learn` is an advisory default for the
-behavioural contract a session in that context adopts (see "Session Mode"
-below).
+- `kind: work|coord|reference` says what ends a context (archival policy):
+  - `work`: terminates when its goal is met. Moves through modes.
+  - `coord`: terminates when its children terminate. Standing arrangement
+    across child contexts or repositories.
+  - `reference`: never terminates. An entity: a codebase, a person, a
+    domain. It goes cold; it does not complete.
+- `mode: research|design|build|review|learn` is an advisory default for the
+  behavioural contract a session in that context adopts (see "Session Mode"
+  below).
+
+### Contexts Carry No Status
+
+A context is never marked complete; contexts carry no `status` field.
+Instead, cue folds what is outstanding (open tasks, unfinished children) and
+displays it without asserting completion. A context with nothing outstanding
+is quiet, not complete. Reference contexts never count as outstanding.
+
+### The `repo` Context Convention
+
+Each scope may hold an ordinary context named `repo` (`kind: reference`),
+holding information that applies to the repository as a whole (such as
+repository-wide idea notes or reference specs). It has no special significance
+to cue and is never resolved to automatically; the operator or skills name
+`repo` explicitly.
 
 ### `parent:`
 
-Child artifacts declare their parent via a scalar path or slug: `parent: parent-slug-or-path` (e.g., child task `parent: auth-redesign`, or executive plan `parent: plan/index.md`). Relationships point upward (child -> parent).
+Child artifacts declare their parent via a scalar canonical address:
+`parent: <address>` (e.g., child task `parent: palekiwi/palekiwi/auth/task/login.md`,
+or executive plan `parent: plan/index.md`, or context `parent: palekiwi/palekiwi/platform`).
+Relationships point upward or sideways (child -> parent). Children are derived
+by scanning, never declared on the parent.
 
 ### `refs:`
 
-Flat list of relative repository paths linking related artifacts:
+Flat list of canonical addresses linking related contexts or artifacts:
 
 ```yaml
 refs:
-  - .cue/master/spec/index.md
-  - .cue/master/task/auth-login.md
+  - palekiwi/palekiwi/cue-platform-direction/spec/index.md
+  - palekiwi/palekiwi/cue-platform-direction/task/migration.md
 ```
 
-## Directory & Context Structure
+### Auto-Stamped Metadata
 
-Memory artifacts live in a context directory `.cue/<scope>/`, where `<scope>` is `master` (the global context) or a task slug.
+- `created_at`: explicitly stamped by cue on all markdown artifacts (Unix
+  timestamp).
+- `repo_id` and `commit_hash`: stamped by cue on `trace` artifacts to correlate
+  them with a specific repository revision.
 
-### Storage Layouts
+## Central Store & Context Structure
 
-1. **Root Artifacts** (`.cue/<context>/<type>/<filename>`): Stable, named anchor documents updated in-place over time.
+Memory artifacts live in a single central store at `$CUE_STORE` (default
+`~/cue`). Per-repository `.cue/` stores are abolished. Cue writes nothing into
+the project working tree.
 
-   - `spec/index.md`: Scope, intent, requirements.
-   - `plan/index.md`: Master plan outlining technical architecture and design choices.
-   - `task/<slug>.md`: Kanban board card (stored flat exclusively in `.cue/master/task/`).
-   - `note/<name>.md`: Root-level idea capture or thread directory (`note/<thread>/index.md`).
+### Store Layout
 
-2. **Point-in-Time Artifacts** (`.cue/<context>/<type>/<timestamp>-<hash>/<filename>`): Moment-in-time snapshots anchored to git history.
-   - `plan/.../<name>.md`: Executive plan for a specific implementation slice.
-   - `todo/.../<name>.md`: Deferred actions, QA checklists, or decision points.
-   - `trace/.../<name>`: Diagnostic output, error logs, and review artifacts.
-   - `tmp/.../<name>`: Ephemeral session data.
+```
+$CUE_STORE/
+  <org>/<repo>/                  # Scope directory derived from git origin remote
+    <context-slug>/              # Context directory
+      context.md                 # Context descriptor and briefing
+      spec/                      # WHY: spec/index.md
+      task/                      # WHAT: named task files (<name>.md)
+      plan/                      # HOW: named plan files (<name>.md)
+      note/                      # THINK: named notes (<name>.md, ideas/<slug>.md)
+      trace/                     # REVISION: named traces with repo_id/commit_hash
+      bin/                       # Structured JSON / executables
+      tmp/                       # Path-encoded ephemeral files (<ts>-<hash>/<file>)
+      log/                       # Per-entry milestone JSON files (<ts>.json)
+```
+
+### Addressing
+
+- Artifact address: `<scope>/<context>/<type>/<name>`
+  (e.g., `palekiwi/palekiwi/cue-platform-direction/spec/index.md`)
+- Context address: `<scope>/<context>`
+  (e.g., `palekiwi/palekiwi/cue-platform-direction`)
+
+Resolution is direct concatenation against `$CUE_STORE`. There is no slug
+search or fallback search path.
+
+### Naming and Paths
+
+The organising rule: **Metadata lives in the artifact. The path carries it only
+when the artifact cannot.**
+
+- All markdown artifacts (`task`, `spec`, `plan`, `note`, `trace`) are named
+  files at `<type>/<name>.md`.
+- No markdown type carries a timestamp or commit hash in its path.
+- The root-versus-point-in-time distinction is deleted.
+- `tmp/` is the sole exception: it holds arbitrary non-markdown files (diffs,
+  binaries, test dumps) and uses a path-encoded directory:
+  `tmp/<created_at>-<commit_hash>/<filename>`.
 
 ### Active Context & Scope Resolution
 
-Context scope determines where artifacts are read and written:
+Context resolution order:
 
-- **Active Context (`.cue/HEAD`)**: Plain-text file containing the active scope
-  (`master` or task slug) used exclusively as a human interactive CLI and editor
-  default.
-- **Explicit Scope Override**: Operations target a specific task context scope
-  without modifying `.cue/HEAD`.
-- **Global Context (`master`)**: Cross-task shared artifacts. Tasks always
-  reside on `master`.
+1. Explicit `--context <slug>` flag (or harness `context` parameter)
+2. `$CUE_CONTEXT` environment variable
+3. Current branch configuration: `git config branch.<branch>.cue-context`
+4. **unset**
 
-### Agent Task Context Rules
+When context is unset:
+- **Reads widen to the repository scope** (e.g. `cue list` lists artifacts
+  across all contexts in the repository).
+- **Writes fail with an error.** Cue has no default or fallback context.
 
-Agents operate under strict task context isolation to prevent race conditions
-and cross-task contamination during concurrent sessions:
+### Context Creation
 
-1. **Explicit Task Parameter Required**: Agents MUST explicitly specify task
-   slug on every cue tool call (`cue-add`, `cue-log`, `cue-plan`, etc.) and
-   `--task <slug>` on CLI queries.
-2. **Prohibition of `.cue/HEAD` Mutation**: `.cue/HEAD` is owned exclusively by
-   the human operator.
+Because cue has no default or fallback context, a new piece of work begins by
+creating its context first:
+
+```bash
+cue context create <slug> --title "Title" --kind work --mode design
+```
+
+In agent harnesses, use the `cue-context` tool.
+
+### Agent Context Isolation Rules
+
+Agents operate under strict context isolation:
+
+1. **Explicit Context Parameter Required**: Agents MUST explicitly pass
+   `context: "<slug>"` on every cue tool call (`cue-add`, `cue-log`, `cue-plan`,
+   `cue-task`, etc.) and `--context <slug>` on CLI queries.
+2. **Never Mutate Branch Context Associations**: Agents must never run
+   `cue context switch` or alter git branch configuration; branch association is
+   operator state.
 3. **Subagent Scope Propagation**: When delegating work to subagents, the
-   primary agent MUST include the task scope directive in the subagent prompt
-   and set `$CUE_TASK` for child processes or sessions when supported.
+   primary agent MUST include the context directive in the subagent prompt
+   and set `$CUE_CONTEXT` for child processes when supported.
 
 ## Artifact Contracts
 
 ### `task` (WHAT)
 
-- Primary unit of work and context anchor; lives exclusively at `.cue/master/task/<slug>.md`.
-- Contains high-level description, problem statement, or initiative context.
-- Tracked on master across feature branches via `branch:` frontmatter list.
+- Primary unit of work; lives at `task/<slug>.md` inside its context.
+- Defined by a goal and a completion condition.
+- Carries `status: open|in-progress|complete|closed` and `priority: critical|high|normal|low`.
+- Namespaced to its context, eliminating global slug collisions.
 
 ## Session Mode (`mode:`)
 
@@ -140,31 +242,30 @@ one.
 ### `spec` (WHY)
 
 - Captures intent, scope, and requirements.
-- Lives at `.cue/<context>/spec/index.md` (root). Does not contain technical
+- Lives at `spec/index.md` inside its context. Does not contain technical
   implementation details or code snippets.
 
 ### `plan` (HOW)
 
 Tracks step-by-step progress using GFM checkboxes (`- [ ]` / `- [x]`).
 
-- **Master Plan (`plan/index.md`)**: Root document establishing overall
-  architecture, phases, and design decisions.
-- **Executive Plan (`plan/<timestamp>-<hash>/<slice>.md`)**: Point-in-time slice
-  linked to master plan via `parent: plan/index.md`.
-
-### `todo` (DEFER)
-
-- Point-in-time auxiliary container for deferred items, QA checklists, and
-  decision points tied to execution.
-- Must be resolved (`complete` or `closed`) before the parent task is marked
-  complete. Standalone work should be elevated to a `task` on master.
+- Lives at `plan/<name>.md` inside its context.
+- Subordinate to a specific task goal (`parent: task/<slug>.md`), or serves as a
+  context-level master plan (`spec/index.md` or context root).
 
 ### `note` (THINK)
 
-- Root-level exploration anchors (`note/<name>.md` or `note/<thread>/index.md`).
-- No `priority` field. Transitions `open` -> `in-progress` -> `closed`. When
-  addressed, content migrates to a `task`, `spec`, or `doc`, and the note is
-  `closed`.
+- Idea capture, conversation anchors, and exploratory reasoning.
+- Lives at `note/<name>.md` or in nested directories such as
+  `note/ideas/<slug>.md`.
+- Transitions `open` -> `complete` (agreed/incorporated) or `closed` (rejected/dropped).
+
+### `trace`
+
+- Artifact about a specific revision (reviews, walkthroughs, hand-offs,
+  diagnostic outputs, branch diffs).
+- Lives at `trace/<name>.md`.
+- Stamped with `repo_id` and `commit_hash` in frontmatter.
 
 ## Artifact Lifecycle Operations
 
@@ -186,52 +287,67 @@ Always use `cue list` (or harness tools) to discover and inspect artifacts.
 
 ### Key Flags & Filtering
 
-- **`--type <type>` / `-t`**: Filter by category (`task`, `plan`, `spec`, `todo`, `note`, `trace`).
-- **`--task <slug>`**: Target a specific task scope without mutating `.cue/HEAD`.
-- **`--all` / `-a`**: Search across all task context directories.
-- **`--filter <EXPR>`**: Filter frontmatter expressions (`KEY=VALUE`, `KEY!=VALUE`, `KEY~=SUBSTRING`).
-- **`--frontmatter`**: Output JSON containing parsed YAML frontmatter objects (implies `--json`).
-- **`-C <PATH>`**: Query artifacts in another repository directory (mirrors `git -C`).
+- **`--context <slug>`**: Target a specific context. When omitted, queries
+  widen across all contexts in the repository scope.
+- **`--type <type>` / `-t <type>`**: Filter by category (`task`, `spec`, `plan`,
+  `note`, `trace`, `bin`, `tmp`). Repeatable to match multiple types.
+- **`--filter <EXPR>`**: Filter frontmatter expressions (`KEY=VALUE`, `KEY!=VALUE`,
+  `KEY~=SUBSTRING`). Dot notation supported (`meta.status=open`). Repeatable (ANDed).
+- **`--frontmatter`**: Parse and include YAML frontmatter in JSON output (implies `--json`).
+- **`--json` / `-j`**: Output structured JSON.
+- **`-C <PATH>` / `--dir <PATH>`**: Run as if started in `<PATH>` (mirrors `git -C`
+  for cross-repo queries; resolves scope via that repo's origin remote).
+- **`--store <PATH>`**: Root of the central cue store; overrides `$CUE_STORE`.
 
 ### Common Discovery Patterns
 
-- **Tasks on master board**: `cue list --task master --type task`
-- **Unfinished tasks (incl. inbox)**: `cue list --task master --type task --filter "status!=complete" --filter "status!=closed"`
-- **Inbox (awaiting triage)**: `cue list --task master --type task --filter "status=inbox"`
-- **Child tasks of a parent**: `cue list --task master --type task --filter "parent=<parent-slug>"`
-- **High priority items**: `cue list --task master --type task --filter "priority=high" --frontmatter`
+- **Tasks in active context**: `cue list --context <slug> --type task`
+- **All tasks across repository scope**: `cue list --type task`
+- **Unfinished tasks in scope**: `cue list --type task --filter "status!=complete" --filter "status!=closed"`
+- **Child tasks of a parent**: `cue list --type task --filter "parent=<canonical-address>"`
+- **High priority items with frontmatter**: `cue list --context <slug> --type task --filter "priority=high" --frontmatter`
+- **List contexts in scope**: `cue context list` or `cue context list --json`
 
 For complete command details and options, see `skills/cue/reference/cli.md`.
 
 ## History & Logging (`cue-log`)
 
 Record durable milestones, architectural choices, non-obvious discoveries, and
-dead-ends in `.cue/<context>/log.md`.
+dead-ends in the context log (`log/<timestamp>.json`).
 
 Log immediately after every git commit and whenever an unexpected discovery or
 dead-end occurs during active work. Keep entries high-signal; offload deep
 output to companion `trace` artifacts.
 
 - **Title**: Concise summary of the milestone, commit, or discovery.
-- **Trace**: Optional trace path (`trace/`) for deep evidence or hand-offs.
+- **Trace**: Optional trace path (`trace/<name>.md`) or canonical address
+  for deep evidence or hand-offs.
 - **Found**: Surprising discoveries, edge cases, or system quirks (never test
   passes or linter output). Omit if empty.
 - **Decided**: Architectural trade-offs, invariants, or abandoned dead-ends
   (never code diffs or renames). Omit if empty.
-- **Open**: Unresolved domain ambiguities or external blockers (never plan/todo
-  next steps). Omit if empty.
+- **Open**: Unresolved domain ambiguities or external blockers (never
+  next-step plan items or workflow actions). Omit if empty.
 
 For routine commits with no new domain learnings or decisions, log only the
 milestone title and omit all bullet arrays.
 
+To inspect recent history:
+```bash
+cue log list --context <slug> --format md --limit 5
+```
+
 ## Operational Discipline
 
-- **Executive Plan Adherence**: Implement current steps in the active executive plan incrementally. Update checkboxes (`- [x]`) as steps complete.
-- **Scope Compliance**: Implement requested scope only. Capture out-of-scope items in `todo` or `note` artifacts rather than performing unrequested work.
-- **Context Awareness**: Verify active context at session start. Explicitly pass context scope during sub-agent handoffs.
-- **Git Worktree Isolation**: Never attempt to include `.cue/` changes in Git
-  commits. The store lives at the main Git root and is shared by linked
-  worktrees; `.cue/HEAD` remains local to each worktree.
+- **Executive Plan Adherence**: Implement current steps in the active executive
+  plan incrementally. Update checkboxes (`- [x]`) as steps complete.
+- **Scope Compliance**: Implement requested scope only. Capture out-of-scope
+  items in `note` or `task` artifacts rather than performing unrequested work.
+- **Context Awareness**: Verify active context at session start. Explicitly pass
+  context slug on all tool calls and sub-agent handoffs.
+- **Central Store Isolation**: Memory artifacts live in `$CUE_STORE`, outside the
+  git repository tree. Never attempt to add or commit cue artifacts to the project's
+  git repository.
 
 ## DOs and DON'Ts
 
@@ -246,27 +362,28 @@ milestone title and omit all bullet arrays.
 
 ### Task & Spec Content
 
-- **DO** keep `task/<slug>.md` concise, focusing on problem context and objectives.
-- **DO** keep `spec/index.md` focused purely on scope and project intent.
+- **DO** keep `task/<slug>.md` concise, focusing on problem context, goals, and completion conditions.
+- **DO** keep `spec/index.md` focused purely on scope, requirements, and project intent.
 - **DON'T** include technical analysis, implementation details, or code snippets in `spec/index.md`.
 
-### Task Placement & Hierarchy
+### Context & Task Organization
 
-- **DO** store task cards flat exclusively on master at `.cue/master/task/<slug>.md`.
-- **DO** declare parent links using scalar `parent:` frontmatter fields.
-- **DON'T** create `task` artifacts on feature branches.
-- **DON'T** use numeric IDs or reserved names (`master`) for task slugs.
+- **DO** create a context first (`cue-context` or `cue context create`) before creating artifacts.
+- **DO** store task cards inside their relevant context at `task/<slug>.md`.
+- **DO** declare parent links using scalar canonical addresses in `parent:`.
+- **DON'T** assume a default or fallback context exists; writes without a context fail.
+- **DON'T** use `inbox` status for tasks; triaged tasks start at `open`.
 
 ### Execution & Git Discipline
 
-- **DO** discover and inspect artifacts using `cue list` instead of searching `.cue/` directly.
-- **DO** pass `task: "<slug>"` explicitly on all cue tool calls (`cue-add`, `cue-log`, `cue-plan`).
+- **DO** discover and inspect artifacts using `cue list` instead of searching the filesystem directly.
+- **DO** pass `context: "<slug>"` explicitly on all cue tool calls (`cue-add`, `cue-log`, `cue-plan`, `cue-task`).
 - **DO** log after every commit and during active discovery; omit empty fields.
-- **DO** resolve all open task-scoped `todo` artifacts before marking a task complete.
-- **DON'T** log test passes, linter output, or transient plan next-steps in `log.md`.
-- **DON'T** run `cue switch` or mutate `.cue/HEAD` (owned exclusively by the human operator).
-- **DON'T** search `.cue/` directly with `grep` or `find` (use `cue list`)
-- **DON'T** include changes in `.cue/` in `git commit` commands.
+- **DO** resolve all open tasks or capture remaining work before concluding a session.
+- **DON'T** log test passes, linter output, or transient plan next-steps in context logs.
+- **DON'T** run `cue context switch` or alter git branch configuration (owned exclusively by the human operator).
+- **DON'T** search the store directly with `grep` or `find` (use `cue list`).
+- **DON'T** attempt to commit cue artifacts in project git commits (the store is external).
 - **DON'T** fix unrelated out-of-scope issues during active task execution.
 
 ### Style & Formatting
