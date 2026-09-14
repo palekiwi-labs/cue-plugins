@@ -16,8 +16,11 @@ const cueTaskTool = tool({
     ),
     content: tool.schema.string().describe("Full body of the task: the goal and its completion condition."),
     title: tool.schema.string().describe("Short display title."),
-    status: tool.schema.enum(["inbox", "open", "in-progress", "complete", "closed"]).optional().default("inbox").describe(
-      "Status of the task. Defaults to \"inbox\" (operator triage); promote to \"open\" or \"in-progress\" when work is accepted."
+    status: tool.schema.enum(["open", "in-progress", "complete", "closed"]).optional().default("open").describe(
+      "Status of the task. Defaults to \"open\": a task is created " +
+      "deliberately with a defined goal, so it is triaged by the act of " +
+      "writing it. Promote to \"in-progress\" while working, " +
+      "\"complete\"/\"closed\" when done."
     ),
     priority: tool.schema.enum(["critical", "high", "normal", "low"]).optional().default("normal").describe(
       "Priority of the task. The only scheduling field."

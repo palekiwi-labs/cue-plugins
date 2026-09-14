@@ -49,15 +49,7 @@ describe("cue-add tool schema", () => {
     }
   })
 
-  test("carries an optional group for tmp artifacts", async () => {
-    const schema = tool.schema.object(await addToolArgs())
-    const parsed = schema.parse({
-      type: "tmp",
-      filename: "run.log",
-      content: "x",
-      context: "demo",
-      group: "ci",
-    })
-    expect(parsed.group).toBe("ci")
+  test("no longer exposes the removed group flag", async () => {
+    expect(Object.keys(await addToolArgs())).not.toContain("group")
   })
 })

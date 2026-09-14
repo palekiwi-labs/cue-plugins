@@ -1,7 +1,7 @@
 import { type Plugin, tool } from "@opencode-ai/plugin"
 import { join } from "node:path"
 import { tmpdir } from "node:os"
-import { contextFlag, dirFlag, groupFlag, storeFlag } from "./cue-args"
+import { contextFlag, dirFlag, storeFlag } from "./cue-args"
 import { frontmatterFlags } from "./frontmatter"
 
 const cueAddTool = tool({
@@ -15,11 +15,11 @@ const cueAddTool = tool({
       "trace",
       "tmp",
       "bin",
-    ]).default("spec").describe(
+    ]    ).default("spec").describe(
       "Type of the artifact. spec is WHY, plan is HOW, task is WHAT, note is " +
       "idea capture; trace is an artifact about a revision (reviews, " +
       "hand-offs, diagnostics) and is stamped with repo_id and commit_hash; " +
-      "tmp holds arbitrary files and requires a group; bin holds JSON."
+      "tmp holds arbitrary files in a commit-pinned directory; bin holds JSON."
     ),
     filename: tool.schema.string().describe(
       "Name of the file (e.g. 'migration-report.md'). Must not contain path " +
@@ -39,11 +39,6 @@ const cueAddTool = tool({
       "Context slug to write into, within the repository's scope. Required: " +
       "cue has no default or fallback context and a write with none fails. " +
       "Discover slugs with `cue context list`."
-    ),
-    group: tool.schema.string().optional().describe(
-      "Group name for tmp artifacts, required when type is tmp. Files land in " +
-      "tmp/<created_at>-<commit_hash>-<group>/, reusing an existing group at " +
-      "the same commit."
     ),
     dir: tool.schema.string().optional().describe(
       "Run cue as if started in this directory instead of the session directory. " +
@@ -65,7 +60,6 @@ const cueAddTool = tool({
         ...dirFlag(args.dir, context.directory),
         ...storeFlag(args.store),
         ...contextFlag(args.context),
-        ...groupFlag(args.group),
         ...(args.frontmatter ? frontmatterFlags(args.frontmatter) : []),
       ]
 

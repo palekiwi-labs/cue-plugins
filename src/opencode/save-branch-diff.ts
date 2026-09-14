@@ -112,14 +112,15 @@ const saveBranchDiffTool = tool({
     //    The diff stays a `tmp` artifact rather than becoming a `trace`,
     //    even though it is an artifact about a revision: cue prepends YAML
     //    frontmatter to every named artifact, which would corrupt the patch.
-    //    `tmp` groups by commit hash, so reruns at one commit overwrite in
-    //    place and separate cleanly across commits.
+    //    tmp writes into a fresh tmp/<created_at>-<commit_hash>/ directory,
+    //    so captures separate across commits by the hash component and
+    //    reruns at one commit accumulate rather than overwrite.
     const filename = diffFilename(branch)
     const tempPath = join(tmpdir(), `branch-diff-${Date.now()}.diff`)
     try {
       await Bun.write(tempPath, diffContent)
 
-      const output = await Bun.$`cue add --type tmp --group branch-diff --force --context ${args.context} --file ${tempPath} ${filename}`
+      const output = await Bun.$`cue add --type tmp --context ${args.context} --file ${tempPath} ${filename}`
         .cwd(targetDir)
         .quiet()
         .text()

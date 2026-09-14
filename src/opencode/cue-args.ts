@@ -65,15 +65,3 @@ export function storeFlag(store: string | undefined): string[] {
   }
   return ["--store", root]
 }
-
-/**
- * Build the `--group` flag for `tmp` artifacts.
- *
- * `tmp` is the one type whose path still carries metadata, and cue requires a
- * group name to build it. Emitting nothing for the other types lets a single
- * call site stay type-agnostic.
- */
-export function groupFlag(group: string | undefined): string[] {
-  const name = group?.trim()
-  return name ? ["--group", name] : []
-}

@@ -13,9 +13,9 @@ async function taskToolArgs() {
 }
 
 describe("taskFrontmatter", () => {
-  test("defaults status to inbox for operator triage", () => {
+  test("defaults status to open: a task is triaged by being written", () => {
     const fm = taskFrontmatter({ title: "Do a thing", refs: [] })
-    expect(fm.status).toBe("inbox")
+    expect(fm.status).toBe("open")
     expect(fm.title).toBe("Do a thing")
     expect(fm.priority).toBe("normal")
   })
@@ -40,5 +40,18 @@ describe("cue-task tool schema", () => {
 
   test("no longer accepts a kind", async () => {
     expect(Object.keys(await taskToolArgs())).not.toContain("kind")
+  })
+
+  test("rejects the abolished inbox status", async () => {
+    const schema = tool.schema.object(await taskToolArgs())
+    expect(() =>
+      schema.parse({
+        filename: "a.md",
+        content: "x",
+        title: "A",
+        context: "demo",
+        status: "inbox",
+      })
+    ).toThrow()
   })
 })

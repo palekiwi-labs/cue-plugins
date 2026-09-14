@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test"
 import { homedir } from "node:os"
-import { contextFlag, dirFlag, groupFlag, storeFlag } from "./cue-args"
+import { contextFlag, dirFlag, storeFlag } from "./cue-args"
 
 describe("dirFlag", () => {
   test("emits nothing when the directory is absent or blank", () => {
@@ -58,16 +58,5 @@ describe("storeFlag", () => {
       "--store",
       `${homedir()}/cue-archive`,
     ])
-  })
-})
-
-describe("groupFlag", () => {
-  test("emits nothing for types that take no group", () => {
-    expect(groupFlag(undefined)).toEqual([])
-    expect(groupFlag(" ")).toEqual([])
-  })
-
-  test("emits the group name for tmp artifacts", () => {
-    expect(groupFlag("branch-diff")).toEqual(["--group", "branch-diff"])
   })
 })

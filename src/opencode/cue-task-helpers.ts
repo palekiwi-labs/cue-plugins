@@ -1,9 +1,10 @@
 /**
  * Build the task frontmatter object from tool args.
  *
- * `status` defaults to "inbox" so agent-created tasks enter as triage items
- * rather than immediately actionable work; inbox is a declared status
- * precisely because the absence of a triage decision cannot be derived.
+ * `status` defaults to "open", matching cue's own write path: a task is
+ * created deliberately with a defined goal, so it is triaged by the act of
+ * being written. Captured ideas that genuinely await triage are notes, not
+ * tasks; `inbox` is not a status the model defines.
  *
  * There is no `kind`: it describes what ends a container of work, which is a
  * property of the context, not of a task. A context may hold several tasks
@@ -20,7 +21,7 @@ export function taskFrontmatter(args: {
 }): Record<string, string | string[]> {
   const fm: Record<string, string | string[]> = {
     title: args.title,
-    status: args.status ?? "inbox",
+    status: args.status ?? "open",
     priority: args.priority ?? "normal",
     refs: args.refs,
   }
