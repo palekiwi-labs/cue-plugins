@@ -17,13 +17,13 @@ export function taskFrontmatter(args: {
   status?: string
   priority?: string
   parent?: string
-  refs: string[]
+  refs?: string[]
 }): Record<string, string | string[]> {
   const fm: Record<string, string | string[]> = {
     title: args.title,
     status: args.status ?? "open",
     priority: args.priority ?? "normal",
-    refs: args.refs,
+    refs: args.refs ?? [],
   }
   if (args.parent) {
     fm.parent = args.parent

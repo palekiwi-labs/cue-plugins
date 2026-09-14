@@ -10,6 +10,9 @@
  *
  * `kind` is emitted only when given; cue defaults it to `work`.
  *
+ * `refs` is optional in practice: the harness does not apply the schema's
+ * `.default([])` before execute runs, so it arrives undefined when omitted.
+ *
  * Kept pure, and out of the plugin module, for unit testing.
  */
 export function contextCreateFlags(args: {
@@ -18,7 +21,7 @@ export function contextCreateFlags(args: {
   mode?: string
   description?: string
   parent?: string
-  refs: string[]
+  refs?: string[]
 }): string[] {
   const flags: string[] = []
   const push = (flag: string, value: string | undefined) => {
@@ -34,7 +37,7 @@ export function contextCreateFlags(args: {
   push("--description", args.description)
   push("--parent", args.parent)
 
-  for (const ref of args.refs) {
+  for (const ref of args.refs ?? []) {
     push("--ref", ref)
   }
 

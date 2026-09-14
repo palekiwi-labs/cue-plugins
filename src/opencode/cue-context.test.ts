@@ -17,6 +17,13 @@ describe("contextCreateFlags", () => {
     expect(contextCreateFlags({ refs: [] })).toEqual([])
   })
 
+  test("tolerates refs omitted entirely: the harness does not apply schema defaults", () => {
+    // opencode passes execute args without applying `.default([])` from the
+    // tool schema, so args.refs is undefined when the agent omits it. The
+    // helper must not dereference it unguarded.
+    expect(contextCreateFlags({})).toEqual([])
+  })
+
   test("emits kind, mode and prose fields as separate argv entries", () => {
     const flags = contextCreateFlags({
       title: "Auth redesign: 'the sequel'",

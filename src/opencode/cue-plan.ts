@@ -42,7 +42,7 @@ const cuePlanTool = tool({
 
       const frontmatter: Record<string, string | string[]> = {
         status: args.status ?? "open",
-        refs: args.refs,
+        refs: args.refs ?? [],
       }
       if (args.parent) {
         frontmatter.parent = args.parent
