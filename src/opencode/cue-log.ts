@@ -2,6 +2,7 @@ import { type Plugin, tool } from "@opencode-ai/plugin"
 import { join } from "node:path"
 import { tmpdir } from "node:os"
 import { contextFlag, dirFlag, storeFlag } from "./cue-args"
+import { runCue } from "./cue-exec"
 import { buildReport, contextNote, estimateContextTokens } from "./context-usage"
 
 export const CueLogPlugin: Plugin = async (input) => {
@@ -32,7 +33,9 @@ export const CueLogPlugin: Plugin = async (input) => {
           trace: tool.schema.string().optional().describe(
             "Canonical address of a trace artifact " +
             "(e.g. 'palekiwi/palekiwi/cue-platform-direction/trace/handoff.md'), " +
-            "resolved against the store root. Attach one only when a " +
+            "resolved against the store root. Must name an existing file " +
+            "inside the logged context's trace/ directory; any other " +
+            "address is rejected. Attach one only when a " +
             "successor needs context beyond the found/decided/open bullets, " +
             "such as at a hand-off."
           ),
@@ -83,7 +86,7 @@ export const CueLogPlugin: Plugin = async (input) => {
               ...storeFlag(args.store),
               ...contextFlag(args.context),
             ]
-            await Bun.$`cue log add ${flags} --file ${tempPath}`.cwd(context.directory).quiet()
+            await runCue(["log", "add", ...flags, "--file", tempPath], context.directory)
             const note = await contextStateLine(context.sessionID)
             return note ? `Logged milestone: ${args.title}\n${note}` : `Logged milestone: ${args.title}`
           } finally {

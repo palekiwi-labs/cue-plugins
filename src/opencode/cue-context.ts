@@ -1,5 +1,6 @@
 import { type Plugin, tool } from "@opencode-ai/plugin"
 import { dirFlag, storeFlag } from "./cue-args"
+import { runCue } from "./cue-exec"
 import { contextCreateFlags } from "./cue-context-helpers"
 
 const cueContextTool = tool({
@@ -57,11 +58,7 @@ const cueContextTool = tool({
       ...contextCreateFlags(args),
     ]
 
-    const output = await Bun.$`cue context create ${flags} ${args.name}`
-      .cwd(context.directory)
-      .text()
-
-    return output.trim()
+    return runCue(["context", "create", ...flags, args.name], context.directory)
   },
 })
 

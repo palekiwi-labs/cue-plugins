@@ -2,6 +2,7 @@ import { type Plugin, tool } from "@opencode-ai/plugin"
 import { isAbsolute, join, resolve } from "node:path"
 import { homedir, tmpdir } from "node:os"
 import { diffFilename, resolveBase } from "./branch-diff-helpers"
+import { runCue } from "./cue-exec"
 
 // NOTE: this module must export ONLY the plugin. opencode's legacy plugin
 // loader invokes every exported function with (input, options) as if it
@@ -120,14 +121,14 @@ const saveBranchDiffTool = tool({
     try {
       await Bun.write(tempPath, diffContent)
 
-      const output = await Bun.$`cue add --type tmp --context ${args.context} --file ${tempPath} ${filename}`
-        .cwd(targetDir)
-        .quiet()
-        .text()
+      const output = await runCue(
+        ["add", "--type", "tmp", "--context", args.context, "--file", tempPath, filename],
+        targetDir,
+      )
 
       return {
         title: `Saved ${filename}`,
-        output: output.trim(),
+        output,
         metadata: { status: "success", branch, base },
       }
     } finally {

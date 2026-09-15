@@ -2,6 +2,7 @@ import { type Plugin, tool } from "@opencode-ai/plugin"
 import { join } from "node:path"
 import { tmpdir } from "node:os"
 import { contextFlag, dirFlag, storeFlag } from "./cue-args"
+import { runCue } from "./cue-exec"
 import { frontmatterFlags } from "./frontmatter"
 
 const cueAddTool = tool({
@@ -63,11 +64,10 @@ const cueAddTool = tool({
         ...(args.frontmatter ? frontmatterFlags(args.frontmatter) : []),
       ]
 
-      const output = await Bun.$`cue add ${flags} --type ${args.type} --file ${tempPath} ${args.filename}`
-        .cwd(context.directory)
-        .text()
-
-      return output.trim()
+      return runCue(
+        ["add", ...flags, "--type", args.type, "--file", tempPath, args.filename],
+        context.directory,
+      )
     } finally {
       // 3. Clean up the temporary file
       const file = Bun.file(tempPath)

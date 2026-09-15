@@ -2,6 +2,7 @@ import { type Plugin, tool } from "@opencode-ai/plugin"
 import { join } from "node:path"
 import { tmpdir } from "node:os"
 import { contextFlag, dirFlag, storeFlag } from "./cue-args"
+import { runCue } from "./cue-exec"
 import { frontmatterFlags } from "./frontmatter"
 
 const cuePlanTool = tool({
@@ -54,11 +55,10 @@ const cuePlanTool = tool({
         ...frontmatterFlags(frontmatter),
       ]
 
-      const output = await Bun.$`cue add ${flags} --type plan --file ${tempPath} ${args.filename}`
-        .cwd(context.directory)
-        .text()
-
-      return output.trim()
+      return runCue(
+        ["add", ...flags, "--type", "plan", "--file", tempPath, args.filename],
+        context.directory,
+      )
     } finally {
       const file = Bun.file(tempPath)
       if (await file.exists()) {
