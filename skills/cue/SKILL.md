@@ -28,15 +28,19 @@ The system is organized around four altitudes:
 
 Alongside these four altitudes, a context holds:
 
-- **`trace/`**: artifacts about a revision (reviews, walkthroughs, hand-offs,
-  diagnostics) stamped with `repo_id` and `commit_hash`.
-- **`bin/`**: structured JSON artifacts and durable executables.
+- **`trace/`**: markdown artifacts about a revision (hand-offs, diagnostics,
+  review walkthroughs) stamped with `repo_id` and `commit_hash`.
+- **`review/`**: JSON-native review artifacts (findings, manifests) written
+  programmatically; the object's top-level keys are its metadata channel.
+- **`bin/`**: executable scripts stored verbatim with the executable bit;
+  they carry no metadata.
 - **`tmp/`**: path-encoded ephemeral data and external outputs
   (`tmp/<created_at>-<commit_hash>/<filename>`).
 - **`log/`**: per-entry chronological milestone stream
   (`log/<timestamp>.json`).
 
 Removed types:
+
 - `todo`: checklists are plans (`plan/`); single deferred obligations are
   tasks (`task/`).
 - `doc`: synthesized knowledge lives in `note/` or `spec/`; revision-specific
@@ -141,7 +145,8 @@ $CUE_STORE/
       plan/                      # HOW: named plan files (<name>.md)
       note/                      # THINK: named notes (<name>.md, ideas/<slug>.md)
       trace/                     # REVISION: named traces with repo_id/commit_hash
-      bin/                       # Structured JSON / executables
+      review/                    # JSON review artifacts (top-level keys are metadata)
+      bin/                       # Executable scripts, stored verbatim
       tmp/                       # Path-encoded ephemeral files (<ts>-<hash>/<file>)
       log/                       # Per-entry milestone JSON files (<ts>.json)
 ```
@@ -183,9 +188,11 @@ when the artifact cannot.**
 - All markdown artifacts (`task`, `spec`, `plan`, `note`, `trace`) are named
   files at `<type>/<name>.md`.
 - No markdown type carries a timestamp or commit hash in its path.
+- Non-markdown types keep metadata in-band instead: a `review` object's
+  top-level keys are its metadata channel; a `bin` executable carries none.
 - The root-versus-point-in-time distinction is deleted.
-- `tmp/` is the sole exception: it holds arbitrary non-markdown files (diffs,
-  binaries, test dumps) and uses a path-encoded directory:
+- `tmp/` is the sole path-encoded type: it holds arbitrary files (diffs,
+  binaries, test dumps) under
   `tmp/<created_at>-<commit_hash>/<filename>`.
 
 ### Active Context & Scope Resolution
@@ -287,10 +294,29 @@ Tracks step-by-step progress using GFM checkboxes (`- [ ]` / `- [x]`).
 
 ### `trace`
 
-- Artifact about a specific revision (reviews, walkthroughs, hand-offs,
-  diagnostic outputs, branch diffs).
+- Markdown artifact about a specific revision (hand-offs, diagnostics,
+  review walkthroughs, branch diffs).
 - Lives at `trace/<name>.md`.
 - Stamped with `repo_id` and `commit_hash` in frontmatter.
+- JSON review payloads are not traces; they belong in `review/`.
+
+### `review`
+
+- JSON-object artifact under `review/<name>.json`, produced
+  programmatically by review workflows.
+- cue validates only that the payload is a JSON object; findings-schema
+  enforcement belongs to the review tooling, not cue.
+- Metadata is in-band: `--frontmatter` fields merge as top-level keys of
+  the object, never a YAML prefix. No `created_at` or revision stamps.
+- Names and nested paths are caller-controlled (e.g.
+  `review/<run-id>/findings.json`); extensionless names get `.json`.
+
+### `bin`
+
+- Executable script stored verbatim: bytes and filename are kept exactly,
+  and the file is marked executable.
+- Carries no metadata; supplying any is an error, not a silent drop.
+- The content is never treated as JSON or reformatted.
 
 ## Artifact Lifecycle Operations
 
@@ -315,7 +341,7 @@ Always use `cue list` (or harness tools) to discover and inspect artifacts.
 - **`--context <slug>`**: Target a specific context. When omitted, queries
   widen across all contexts in the repository scope.
 - **`--type <type>` / `-t <type>`**: Filter by category (`task`, `spec`, `plan`,
-  `note`, `trace`, `bin`, `tmp`). Repeatable to match multiple types.
+  `note`, `trace`, `review`, `bin`, `tmp`). Repeatable to match multiple types.
 - **`--filter <EXPR>`**: Filter frontmatter expressions (`KEY=VALUE`, `KEY!=VALUE`,
   `KEY~=SUBSTRING`). Dot notation supported (`meta.status=open`). Repeatable (ANDed).
 - **`--frontmatter`**: Parse and include YAML frontmatter in JSON output (implies `--json`).

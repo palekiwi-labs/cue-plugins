@@ -89,7 +89,7 @@ cue list [OPTIONS]
 - `--context <CONTEXT>`: Target a specific context. When omitted, widens across
   all contexts in the repository scope.
 - `--type <TYPE>`, `-t <TYPE>`: Filter by artifact category (`task`, `spec`, `plan`,
-  `note`, `trace`, `bin`, `tmp`). Repeatable to match any selected type.
+  `note`, `trace`, `review`, `bin`, `tmp`). Repeatable to match any selected type.
 - `--filter <EXPR>`: Filter by frontmatter field (repeatable, ANDed).
   Syntax: `KEY=VALUE`, `KEY!=VALUE`, `KEY~=SUBSTRING`. Dot notation supported (`meta.status=open`).
 - `--frontmatter`: Parse and include YAML frontmatter in JSON output (implies `--json`).
@@ -126,11 +126,19 @@ cue add [OPTIONS] <FILENAME> [CONTENT]
 **Key Flags:**
 - `--context <CONTEXT>`: Context slug to write into (required; cue has no fallback context).
 - `--type <TYPE>`, `-t <TYPE>`: Type of artifact (`spec` [default], `task`, `plan`,
-  `note`, `trace`, `bin`, `tmp`).
+  `note`, `trace`, `review`, `bin`, `tmp`).
 - `--file <FILE>`: Read content from a file (recommended for AI agents to avoid escaping issues).
-- `-f <KEY=VALUE>`, `--frontmatter <KEY=VALUE>`: Frontmatter fields to prepend (repeatable,
-  `KEY=VALUE`). Cue is the sole writer of frontmatter.
+- `-f <KEY=VALUE>`, `--frontmatter <KEY=VALUE>`: Metadata fields (repeatable,
+  `KEY=VALUE`). Cue is the sole writer. Markdown types carry them as a YAML
+  frontmatter block; `review` merges them as top-level keys of the JSON
+  object; `bin` refuses metadata — an executable carries none.
 - `--force`: Overwrite existing file.
+
+Type-specific write behaviour: `review` requires a JSON object (extensionless
+names get `.json`) and is never prepended with frontmatter; `bin` stores the
+supplied bytes verbatim, keeps the filename exactly as given, and marks the
+file executable; `tmp` writes into a fresh
+`tmp/<created_at>-<commit_hash>/` directory.
 
 ### `cue render`
 Renders artifacts as framed blocks for injection into an agent session.
