@@ -59,7 +59,7 @@ const cueTaskTool = tool({
         ...frontmatterFlags(taskFrontmatter(args)),
       ]
 
-      return runCue(
+      return await runCue(
         ["add", ...flags, "--type", "task", "--file", tempPath, args.filename],
         context.directory,
       )

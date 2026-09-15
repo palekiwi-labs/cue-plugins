@@ -31,9 +31,9 @@ describe("cue-add tool schema", () => {
     expect(() => schema.parse({ filename: "index.md", content: "x" })).toThrow()
   })
 
-  test("accepts the eight live artifact types", async () => {
+  test("accepts the seven generic artifact types", async () => {
     const schema = tool.schema.object(await addToolArgs())
-    for (const type of ["spec", "plan", "note", "task", "trace", "review", "bin", "tmp"]) {
+    for (const type of ["spec", "plan", "note", "task", "trace", "bin", "tmp"]) {
       const parsed = schema.parse({
         type,
         filename: "a.md",
@@ -42,6 +42,13 @@ describe("cue-add tool schema", () => {
       })
       expect(parsed.type).toBe(type)
     }
+  })
+
+  test("rejects review, which belongs to the cue-review tool", async () => {
+    const schema = tool.schema.object(await addToolArgs())
+    expect(() =>
+      schema.parse({ type: "review", filename: "a.json", content: "{}", context: "demo" })
+    ).toThrow()
   })
 
   test("rejects the abolished doc and todo types", async () => {
@@ -58,49 +65,22 @@ describe("cue-add tool schema", () => {
   })
 })
 
-// Live contract tests: exercise the real cue binary against a throwaway
-// store, per the pattern in cue-exec.test.ts. The contract under test is
-// cue's write-path behaviour for JSON-native types — no YAML prefix, no
-// auto-stamps, metadata merged in-band — which is cue's to write and this
-// plugin's schema descriptions to teach. These guard the f0901bf class
-// (JSON payloads corrupted by frontmatter prepending) from returning.
-describe("cue-add review contract (live binary)", () => {
-  const store = join(tmpdir(), `cue-add-review-store-${Date.now()}`)
+// Live contract test: exercise the real cue binary against a throwaway
+// store, per the pattern in cue-exec.test.ts. cue's refusal text for bin
+// metadata is the contract this plugin's schema descriptions teach; the
+// review write-path contract (no YAML prefix, in-band metadata merge) is
+// covered by cue-review.test.ts, which owns that door.
+describe("cue-add bin contract (live binary)", () => {
+  const store = join(tmpdir(), `cue-add-bin-store-${Date.now()}`)
   const repoDir = process.cwd()
-  const context = "probe-review-contract"
+  const context = "probe-bin-contract"
 
   afterAll(() => {
     rmSync(store, { recursive: true, force: true })
   })
 
-  test("writes review JSON under review/ with metadata as top-level keys", async () => {
-    await runCue(["context", "create", "--store", store, context], repoDir)
-    await runCue(
-      [
-        "add",
-        "--store",
-        store,
-        "--context",
-        context,
-        "--type",
-        "review",
-        "--frontmatter",
-        "run=1",
-        "findings",
-        '{"verdict":"pass"}',
-      ],
-      repoDir,
-    )
-
-    const path = join(store, "palekiwi-labs/cue-plugins", context, "review", "findings.json")
-    const raw = await Bun.file(path).text()
-    // A YAML prefix would make this parse fail; in-band merge means both
-    // keys sit in the one object.
-    const parsed = JSON.parse(raw)
-    expect(parsed).toEqual({ run: 1, verdict: "pass" })
-  })
-
   test("bin refuses metadata rather than corrupting an executable", async () => {
+    await runCue(["context", "create", "--store", store, context], repoDir)
     expect(
       runCue(
         [

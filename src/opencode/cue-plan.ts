@@ -55,7 +55,7 @@ const cuePlanTool = tool({
         ...frontmatterFlags(frontmatter),
       ]
 
-      return runCue(
+      return await runCue(
         ["add", ...flags, "--type", "plan", "--file", tempPath, args.filename],
         context.directory,
       )

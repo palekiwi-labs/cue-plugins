@@ -6,25 +6,25 @@ import { runCue } from "./cue-exec"
 import { frontmatterFlags } from "./frontmatter"
 
 const cueAddTool = tool({
-  description: "Create a new cue artifact (spec, plan, note, task, trace, review, bin, tmp).",
+  description:
+    "Create a new cue artifact (spec, plan, note, task, trace, bin, tmp). " +
+    "Review artifacts are not created here; use the cue-review tool.",
   args: {
     type: tool.schema
-      .enum(["spec", "plan", "note", "task", "trace", "review", "bin", "tmp"])
+      .enum(["spec", "plan", "note", "task", "trace", "bin", "tmp"])
       .default("spec")
       .describe(
         "Type of the artifact. spec is WHY, plan is HOW, task is WHAT, note " +
         "is idea capture; trace is a markdown artifact about a revision " +
         "(hand-offs, diagnostics, review walkthroughs), stamped with " +
-        "repo_id and commit_hash; review is a JSON-object review payload " +
-        "whose metadata is its own top-level keys; bin is an executable " +
-        "script stored verbatim with the executable bit and carries no " +
-        "metadata; tmp holds arbitrary files in a commit-pinned directory.",
+        "repo_id and commit_hash; bin is an executable script stored " +
+        "verbatim with the executable bit and carries no metadata; tmp " +
+        "holds arbitrary files in a commit-pinned directory.",
       ),
     filename: tool.schema.string().describe(
       "Name of the file (e.g. 'migration-report.md', 'ideas/auth.md'). " +
       "Nested relative paths are allowed; absolute paths and '..' are not. " +
-      "Extensionless names get '.md' appended for markdown types and " +
-      "'.json' for review.",
+      "Extensionless names get '.md' appended for markdown types.",
     ),
     content: tool.schema.string().describe("Full content of the artifact"),
     frontmatter: tool.schema
@@ -34,9 +34,8 @@ const cueAddTool = tool({
         "Metadata fields for the artifact. Markdown types carry them as a " +
         "YAML frontmatter block; a list value becomes a YAML list " +
         "(e.g. { refs: ['palekiwi/palekiwi/cue-review/spec/index.md'] }). " +
-        "review merges them as top-level keys of the JSON object; bin " +
-        "rejects metadata entirely. created_at is stamped by cue; never " +
-        "set it here.",
+        "bin rejects metadata entirely. created_at is stamped by cue; " +
+        "never set it here.",
       ),
     context: tool.schema.string().describe(
       "Context slug to write into, within the repository's scope. Required: " +
@@ -66,7 +65,7 @@ const cueAddTool = tool({
         ...(args.frontmatter ? frontmatterFlags(args.frontmatter) : []),
       ]
 
-      return runCue(
+      return await runCue(
         ["add", ...flags, "--type", args.type, "--file", tempPath, args.filename],
         context.directory,
       )

@@ -310,6 +310,9 @@ Tracks step-by-step progress using GFM checkboxes (`- [ ]` / `- [x]`).
   the object, never a YAML prefix. No `created_at` or revision stamps.
 - Names and nested paths are caller-controlled (e.g.
   `review/<run-id>/findings.json`); extensionless names get `.json`.
+- In opencode sessions, review artifacts are written with the dedicated
+  `cue-review` tool — the only door for the type; `cue-add` does not
+  expose it. The CLI keeps `cue add --type review`.
 
 ### `bin`
 
