@@ -96,15 +96,19 @@ to cue and is never resolved to automatically; the operator or skills name
 
 ### `parent:`
 
-Child artifacts declare their parent via a scalar canonical address:
-`parent: <address>` (e.g., child task `parent: palekiwi/palekiwi/auth/task/login.md`,
-or executive plan `parent: plan/index.md`, or context `parent: palekiwi/palekiwi/platform`).
+Exactly one scalar canonical address: `parent: <address>`. For example a child
+task `parent: palekiwi/palekiwi/auth/task/login.md`, a plan
+`parent: palekiwi/palekiwi/auth/task/login.md`, or a context
+`parent: palekiwi/palekiwi/platform`. Never a partial form such as
+`plan/index.md`, even when the parent lives in the same context.
+
 Relationships point upward or sideways (child -> parent). Children are derived
 by scanning, never declared on the parent.
 
 ### `refs:`
 
-Flat list of canonical addresses linking related contexts or artifacts:
+Flat list of canonical addresses linking related contexts or artifacts.
+Always a YAML list, including when there is exactly one entry:
 
 ```yaml
 refs:
@@ -152,6 +156,25 @@ $CUE_STORE/
 Resolution is direct concatenation against `$CUE_STORE`. There is no slug
 search or fallback search path.
 
+### Addresses Are the Only Reference Form
+
+An address is identity; a filesystem path is location. Derive location from
+identity, never the reverse:
+
+```
+<absolute path> = $CUE_STORE + "/" + <canonical address>
+```
+
+Every reference recorded inside an artifact (`parent:`, `refs:`, a log
+entry's `trace`) MUST be a full canonical address. Absolute paths and
+partial or context-relative forms (`trace/handoff.md`, `plan/index.md`) are
+invalid: an absolute path hardcodes one machine's store location, and a
+partial form has no meaning outside the artifact that holds it. Both break
+store portability and sharing.
+
+When a cue command prints an address, prepend the store root yourself to open
+the file. Do not copy a printed absolute path into frontmatter.
+
 ### Naming and Paths
 
 The organising rule: **Metadata lives in the artifact. The path carries it only
@@ -175,6 +198,7 @@ Context resolution order:
 4. **unset**
 
 When context is unset:
+
 - **Reads widen to the repository scope** (e.g. `cue list` lists artifacts
   across all contexts in the repository).
 - **Writes fail with an error.** Cue has no default or fallback context.
@@ -250,8 +274,9 @@ one.
 Tracks step-by-step progress using GFM checkboxes (`- [ ]` / `- [x]`).
 
 - Lives at `plan/<name>.md` inside its context.
-- Subordinate to a specific task goal (`parent: task/<slug>.md`), or serves as a
-  context-level master plan (`spec/index.md` or context root).
+- Subordinate to a specific task goal, declaring that task's canonical address
+  as `parent:`, or serving as a context-level master plan with the context's
+  own address as `parent:`.
 
 ### `note` (THINK)
 
@@ -320,8 +345,9 @@ dead-end occurs during active work. Keep entries high-signal; offload deep
 output to companion `trace` artifacts.
 
 - **Title**: Concise summary of the milestone, commit, or discovery.
-- **Trace**: Optional trace path (`trace/<name>.md`) or canonical address
-  for deep evidence or hand-offs.
+- **Trace**: Optional canonical address of a trace artifact for deep evidence
+  or hand-offs (e.g. `palekiwi/palekiwi/auth/trace/handoff.md`). The
+  context-relative form `trace/<name>.md` is rejected.
 - **Found**: Surprising discoveries, edge cases, or system quirks (never test
   passes or linter output). Omit if empty.
 - **Decided**: Architectural trade-offs, invariants, or abandoned dead-ends
@@ -333,6 +359,7 @@ For routine commits with no new domain learnings or decisions, log only the
 milestone title and omit all bullet arrays.
 
 To inspect recent history:
+
 ```bash
 cue log list --context <slug> --format md --limit 5
 ```
@@ -371,6 +398,8 @@ cue log list --context <slug> --format md --limit 5
 - **DO** create a context first (`cue-context` or `cue context create`) before creating artifacts.
 - **DO** store task cards inside their relevant context at `task/<slug>.md`.
 - **DO** declare parent links using scalar canonical addresses in `parent:`.
+- **DO** write every reference (`parent:`, `refs:`, log `trace`) as a full canonical address, and always write `refs:` as a list.
+- **DON'T** record an absolute path or a partial address in an artifact; derive the path from the address at read time instead.
 - **DON'T** assume a default or fallback context exists; writes without a context fail.
 - **DON'T** use `inbox` status for tasks; triaged tasks start at `open`.
 
