@@ -14,6 +14,8 @@ PWD: !`pwd`
 !`cue status --context "$1" 2>/dev/null`
 </status>
 
+!`$HOME/.config/opencode/commands/cue/scripts/context-children.sh "$1"`
+
 <log>
 !`cue log list --context "$1" --format md`
 </log>
