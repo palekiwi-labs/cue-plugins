@@ -10,10 +10,6 @@ PWD: !`pwd`
 
 !`$HOME/.config/opencode/scripts/git-context.sh`
 
-<existing-contexts>
-!`cue context list`
-</existing-contexts>
-
 Load the `cue` and `cue-review` skills.
 
 **Mandatory Instructions:**

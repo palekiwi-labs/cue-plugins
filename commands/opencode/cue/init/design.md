@@ -8,10 +8,6 @@ $ARGUMENTS
 
 PWD: !`pwd`
 
-<existing-contexts>
-!`cue context list`
-</existing-contexts>
-
 Load the `cue` and `cue-design` skills.
 
 **Mandatory Instructions:**
