@@ -37,6 +37,7 @@ function makeMockPi(handler: ExecHandler = () => ok()) {
     registerTool: (t: ToolDefinition<any>) => tools.push(t),
     registerCommand: (name: string) => commands.push(name),
     sendUserMessage: (_content: string) => {},
+    on: () => {},
     exec: async (command: string, args: string[], options?: { cwd?: string }) => {
       const call = { command, args, cwd: options?.cwd }
       execCalls.push(call)
