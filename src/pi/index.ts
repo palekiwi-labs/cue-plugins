@@ -1,4 +1,8 @@
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent"
+import { registerContextCommand } from "./commands/context"
+import { registerIdeaCommand } from "./commands/idea"
+import { registerInitCommands } from "./commands/init"
+import { registerResumeCommand } from "./commands/resume"
 import { cueAddTool } from "./tools/cue-add"
 import { cueContextTool } from "./tools/cue-context"
 import { cueContextUsageTool } from "./tools/cue-context-usage"
@@ -26,4 +30,9 @@ export default function cuePlugins(pi: ExtensionAPI): void {
   pi.registerTool(cueReviewTool(pi))
   pi.registerTool(cueTaskTool(pi))
   pi.registerTool(saveBranchDiffTool(pi))
+
+  registerInitCommands(pi)
+  registerResumeCommand(pi)
+  registerContextCommand(pi)
+  registerIdeaCommand(pi)
 }
