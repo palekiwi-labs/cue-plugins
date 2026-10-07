@@ -1,0 +1,29 @@
+import type { ExtensionAPI } from "@earendil-works/pi-coding-agent"
+import { cueAddTool } from "./tools/cue-add"
+import { cueContextTool } from "./tools/cue-context"
+import { cueContextUsageTool } from "./tools/cue-context-usage"
+import { cueLogTool } from "./tools/cue-log"
+import { cuePlanTool } from "./tools/cue-plan"
+import { cueReviewTool } from "./tools/cue-review"
+import { cueTaskTool } from "./tools/cue-task"
+import { saveBranchDiffTool } from "./tools/save-branch-diff"
+
+/**
+ * cue-plugins extension for the pi harness.
+ *
+ * Registers the cue tool surface at parity with the opencode wrappers
+ * (thin bridges over the `cue` CLI) plus the orientation commands.
+ * Installed via the repo-root `package.json` `pi` manifest.
+ */
+export default function cuePlugins(pi: ExtensionAPI): void {
+  // Registered individually: each factory yields a distinctly-typed
+  // ToolDefinition, so a homogeneous loop would widen to an incompatible union.
+  pi.registerTool(cueAddTool(pi))
+  pi.registerTool(cueContextTool(pi))
+  pi.registerTool(cueContextUsageTool())
+  pi.registerTool(cueLogTool(pi))
+  pi.registerTool(cuePlanTool(pi))
+  pi.registerTool(cueReviewTool(pi))
+  pi.registerTool(cueTaskTool(pi))
+  pi.registerTool(saveBranchDiffTool(pi))
+}
