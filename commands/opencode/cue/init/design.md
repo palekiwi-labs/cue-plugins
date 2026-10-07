@@ -14,7 +14,7 @@ Load the `cue` and `cue-design` skills.
 
 - Analyze user instructions in `<user-instructions>`.
 - Infer a concise kebab-case slug, a title, and a one-line description. Name
-  the subject rather than the activitya.
+  the subject rather than the activity.
 - Call `cue-context` with `mode: "design"` and `kind: "work"`.
 - Report back with a concise summary of the created context and await
   instructions unless explicit instructions are provided in
