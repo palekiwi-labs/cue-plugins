@@ -2,7 +2,7 @@ import { afterAll, describe, expect, test } from "bun:test"
 import { rmSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
-import { tool, type PluginInput } from "@opencode-ai/plugin"
+import { tool, type PluginInput, type ToolContext } from "@opencode-ai/plugin"
 import { CueReviewPlugin } from "./cue-review"
 import { runCue } from "./cue-exec"
 
@@ -16,7 +16,7 @@ async function reviewTool() {
 }
 
 // The tool's execute receives the opencode tool context; only .directory is read.
-const fakeContext = { directory: process.cwd() } as { directory: string }
+const fakeContext = { directory: process.cwd() } as unknown as ToolContext
 
 describe("cue-review tool schema", () => {
   test("carries no type argument: the type is the tool", async () => {
