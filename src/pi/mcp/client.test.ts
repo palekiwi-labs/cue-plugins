@@ -4,6 +4,7 @@ import { tmpdir } from "node:os"
 import { join } from "node:path"
 import {
   CastMcpClient,
+  ClientNotFoundError,
   McpClientError,
   nodeSpawner,
   parseList,
@@ -95,6 +96,13 @@ describe("CastMcpClient", () => {
       throw new Error("spawn ENOENT")
     })
     await expect(client.status("/w")).rejects.toThrow(/could not be run: spawn ENOENT/)
+  })
+
+  test("a binary absent from PATH raises ClientNotFoundError", async () => {
+    const client = new CastMcpClient(nodeSpawner, "cast-mcp-client-does-not-exist")
+    const error = await client.status(tmpdir()).catch((e) => e)
+    expect(error).toBeInstanceOf(ClientNotFoundError)
+    expect(error).toBeInstanceOf(McpClientError)
   })
 
   test("list queries only the cast server", async () => {

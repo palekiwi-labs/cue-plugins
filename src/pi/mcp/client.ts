@@ -45,6 +45,9 @@ export type Spawner = (
 /** Failure to reach the server or run the client, as opposed to a tool error. */
 export class McpClientError extends Error {}
 
+/** The client binary is not on PATH: not running inside a cast sandbox. */
+export class ClientNotFoundError extends McpClientError {}
+
 export function parseStatus(stdout: string): ServerStatus {
   let entries: unknown
   try {
@@ -117,7 +120,11 @@ export class CastMcpClient {
     try {
       result = await this.spawner(this.binary, args, options)
     } catch (error) {
-      throw new McpClientError(`${this.binary} could not be run: ${(error as Error).message}`)
+      const message = `${this.binary} could not be run: ${(error as Error).message}`
+      if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+        throw new ClientNotFoundError(message)
+      }
+      throw new McpClientError(message)
     }
     if (result.code !== 0 || result.killed) throw failure(args, result)
     return result
