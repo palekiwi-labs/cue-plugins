@@ -119,7 +119,7 @@ function orientationPi(overrides: Record<string, ExecResult> = {}): ExecHandler 
 }
 
 describe("command registration", () => {
-  test("cuePlugins registers every cue command name", () => {
+  test("cuePlugins registers every command name", () => {
     const { pi, commands } = makeCommandPi()
     cuePlugins(pi)
     expect(Object.keys(commands).sort()).toEqual([
@@ -132,6 +132,7 @@ describe("command registration", () => {
       "cue:init:research",
       "cue:init:review",
       "cue:resume",
+      "mcp-cast",
     ])
   })
 })

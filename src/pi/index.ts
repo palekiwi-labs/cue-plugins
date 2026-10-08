@@ -4,6 +4,7 @@ import { registerContextCommand } from "./commands/context"
 import { registerIdeaCommand } from "./commands/idea"
 import { registerInitCommands } from "./commands/init"
 import { registerResumeCommand } from "./commands/resume"
+import { registerMcpCastAdapter } from "./mcp"
 import { cueAddTool } from "./tools/cue-add"
 import { cueContextTool } from "./tools/cue-context"
 import { cueContextUsageTool } from "./tools/cue-context-usage"
@@ -17,7 +18,8 @@ import { saveBranchDiffTool } from "./tools/save-branch-diff"
  * cue-plugins extension for the pi harness.
  *
  * Registers the cue tool surface at parity with the opencode wrappers
- * (thin bridges over the `cue` CLI) plus the orientation commands.
+ * (thin bridges over the `cue` CLI) plus the orientation commands, and
+ * exposes the cast MCP server's tools as generated `mcp-cast_*` tools.
  * Installed via the repo-root `package.json` `pi` manifest.
  */
 export default function cuePlugins(pi: ExtensionAPI): void {
@@ -37,4 +39,5 @@ export default function cuePlugins(pi: ExtensionAPI): void {
   registerContextCommand(pi)
   registerIdeaCommand(pi)
   registerAcuityListener(pi)
+  registerMcpCastAdapter(pi)
 }
