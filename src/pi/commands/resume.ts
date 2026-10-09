@@ -1,7 +1,12 @@
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent"
 import { contextChildren } from "../lib/context-children"
 import { formatGitContext, gitContext } from "../lib/git-context"
-import { composeMessage, cueBestEffort, sendPrompt } from "./common"
+import {
+  composeMessage,
+  cueBestEffort,
+  sendPrompt,
+  withoutCueSkillLoad,
+} from "./common"
 
 export const RESUME_INSTRUCTIONS = `Load the \`cue\` skill.
 
@@ -50,7 +55,7 @@ export function registerResumeCommand(pi: ExtensionAPI): void {
           children,
           `<log>\n${log}\n</log>`,
           rendered,
-          RESUME_INSTRUCTIONS,
+          withoutCueSkillLoad(RESUME_INSTRUCTIONS),
         ]),
       )
     },

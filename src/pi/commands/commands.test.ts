@@ -225,7 +225,7 @@ describe("/cue:resume", () => {
     )
     expect(msg).toContain("<log>\n- **Milestone:** shipped\n</log>")
     expect(msg).toContain("SPEC\nPLAN")
-    expect(msg).toContain("Load the `cue` skill.")
+    expect(msg).not.toContain("Load the `cue` skill.")
     expect(msg).toContain("**DO NOT** perform any further research")
   })
 
@@ -300,7 +300,7 @@ describe("/cue:init", () => {
     expect(sent).toHaveLength(1)
     expect(msg).toContain("<user-instructions>\nbuild the auth flow\n</user-instructions>")
     expect(msg).toContain("PWD: /work")
-    expect(msg).toContain("Load the `cue` skill.")
+    expect(msg).not.toContain("Load the `cue` skill.")
     expect(msg).toContain("Call `cue-context` with that name")
     expect(msg).not.toContain("BASE_BRANCH")
   })
@@ -310,7 +310,7 @@ describe("/cue:init", () => {
       handler: orientationPi(),
     })
     expect(msg).toContain("BASE_BRANCH=master")
-    expect(msg).toContain("Load the `cue`, `cue-build`, `git-commit` and `tdd` skills.")
+    expect(msg).toContain("Load the `cue-build`, `git-commit` and `tdd` skills.")
     expect(msg).toContain('Call `cue-context` with `mode: "build"` and `kind: "work"`.')
   })
 
@@ -320,7 +320,7 @@ describe("/cue:init", () => {
     })
     expect(execCalls).toHaveLength(0)
     expect(msg).not.toContain("BASE_BRANCH")
-    expect(msg).toContain("Load the `cue` and `cue-design` skills.")
+    expect(msg).toContain("Load the `cue-design` skill.")
   })
 })
 

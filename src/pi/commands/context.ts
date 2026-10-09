@@ -1,7 +1,12 @@
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent"
 import { contextChildren } from "../lib/context-children"
 import { formatGitContext, gitContext } from "../lib/git-context"
-import { composeMessage, cueBestEffort, sendPrompt } from "./common"
+import {
+  composeMessage,
+  cueBestEffort,
+  sendPrompt,
+  withoutCueSkillLoad,
+} from "./common"
 
 export const CONTEXT_INSTRUCTIONS = `Load the \`cue\` skill.
 
@@ -75,7 +80,7 @@ export function registerContextCommand(pi: ExtensionAPI): void {
           children,
           `<log>\n${log}\n</log>`,
           rendered,
-          CONTEXT_INSTRUCTIONS,
+          withoutCueSkillLoad(CONTEXT_INSTRUCTIONS),
         ]),
       )
     },

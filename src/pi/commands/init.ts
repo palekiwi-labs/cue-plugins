@@ -1,6 +1,6 @@
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent"
 import { formatGitContext, gitContext } from "../lib/git-context"
-import { composeMessage, sendPrompt } from "./common"
+import { composeMessage, sendPrompt, withoutCueSkillLoad } from "./common"
 
 /**
  * Static prompt text below, kept word-for-word in sync with the opencode
@@ -100,37 +100,37 @@ const VARIANTS: InitVariant[] = [
     suffix: "",
     description: "Infer and create a new cue context, then open a session in it",
     gitContext: false,
-    instructions: INIT_INSTRUCTIONS,
+    instructions: withoutCueSkillLoad(INIT_INSTRUCTIONS),
   },
   {
     suffix: "build",
     description: "Create a new cue context for a build session (mode: build)",
     gitContext: true,
-    instructions: INIT_BUILD_INSTRUCTIONS,
+    instructions: withoutCueSkillLoad(INIT_BUILD_INSTRUCTIONS),
   },
   {
     suffix: "design",
     description: "Create a new cue context for a design session (mode: design)",
     gitContext: false,
-    instructions: INIT_DESIGN_INSTRUCTIONS,
+    instructions: withoutCueSkillLoad(INIT_DESIGN_INSTRUCTIONS),
   },
   {
     suffix: "learn",
     description: "Create a new cue context for a learning session (mode: learn)",
     gitContext: false,
-    instructions: INIT_LEARN_INSTRUCTIONS,
+    instructions: withoutCueSkillLoad(INIT_LEARN_INSTRUCTIONS),
   },
   {
     suffix: "research",
     description: "Create a new cue context for a research session (mode: research)",
     gitContext: false,
-    instructions: INIT_RESEARCH_INSTRUCTIONS,
+    instructions: withoutCueSkillLoad(INIT_RESEARCH_INSTRUCTIONS),
   },
   {
     suffix: "review",
     description: "Create a new cue context for a review session (mode: review)",
     gitContext: true,
-    instructions: INIT_REVIEW_INSTRUCTIONS,
+    instructions: withoutCueSkillLoad(INIT_REVIEW_INSTRUCTIONS),
   },
 ]
 
