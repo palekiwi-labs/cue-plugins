@@ -78,7 +78,7 @@ async function runTool(
 }
 
 describe("cuePlugins registration", () => {
-  test("registers all eight tools at opencode parity", () => {
+  test("registers the eight parity tools plus delegate", () => {
     const { pi, tools } = makeMockPi()
     cuePlugins(pi)
     expect(tools.map((t) => t.name).sort()).toEqual([
@@ -89,6 +89,7 @@ describe("cuePlugins registration", () => {
       "cue-plan",
       "cue-review",
       "cue-task",
+      "delegate",
       "save-branch-diff",
     ])
   })

@@ -14,6 +14,7 @@ import { cuePlanTool } from "./tools/cue-plan"
 import { cueReviewTool } from "./tools/cue-review"
 import { cueTaskTool } from "./tools/cue-task"
 import { saveBranchDiffTool } from "./tools/save-branch-diff"
+import { delegateTool } from "./tools/delegate"
 
 /**
  * cue-plugins extension for the pi harness.
@@ -35,6 +36,7 @@ export default function cuePlugins(pi: ExtensionAPI): void {
   pi.registerTool(cueReviewTool(pi))
   pi.registerTool(cueTaskTool(pi))
   pi.registerTool(saveBranchDiffTool(pi))
+  pi.registerTool(delegateTool())
 
   registerInitCommands(pi)
   registerResumeCommand(pi)
