@@ -47,11 +47,7 @@ export function statusReport(state: ConnectionState, toolNames: string[]): strin
 
 export function unreachableWarning(state: Extract<ConnectionState, { kind: "unreachable" }>): string {
   const at = state.url ? ` at ${state.url}` : ""
-  return (
-    `cast MCP server unreachable${at}: ${state.error}. ` +
-    `Its tools become available once it is running; retried before each prompt, ` +
-    `or run /${COMMAND} reconnect.`
-  )
+  return `cast MCP server unreachable${at}. Run /${COMMAND} reconnect once running.`
 }
 
 export function registerMcpCastCommand(pi: ExtensionAPI, adapter: McpCastAdapter): void {

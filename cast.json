@@ -1,3 +1,17 @@
 {
-  "project_shell": "."
+  "project_shell": ".",
+  "extra_data_volumes": {
+    "palekiwi": {
+      "source": "/home/pl/code/palekiwi/",
+      "target": "/home/pl/code/palekiwi/",
+      "type": "bind",
+      "mode": "ro"
+    },
+    "palekiwi-labs": {
+      "source": "/home/pl/code/palekiwi-labs/",
+      "target": "/home/pl/code/palekiwi-labs/",
+      "type": "bind",
+      "mode": "ro"
+    }
+  }
 }

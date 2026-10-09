@@ -143,7 +143,7 @@ describe("session_start", () => {
     expect(s.adapter.state).toEqual({ kind: "unreachable", url: URL, error: "refused" })
     expect(s.lastStatus()).toContain("/mcp-cast reconnect")
     expect(s.warnings()).toHaveLength(1)
-    expect(s.warnings()[0].message).toContain("refused")
+    expect(s.warnings()[0].message).toContain("unreachable")
 
     s.clock.advance(5000)
     await beforeAgentStart(s)
