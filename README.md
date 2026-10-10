@@ -61,7 +61,9 @@ Tools (parity with opencode): `cue-add`, `cue-context`,
 
 Commands: `/cue:init` (plus `/cue:init:build`, `/cue:init:design`,
 `/cue:init:learn`, `/cue:init:research`, `/cue:init:review`),
-`/cue:resume`, `/cue:context <slug>`, `/cue:idea`.
+`/cue:resume`, `/cue:context <slug>`, `/cue:idea`, plus the pi-only
+`/review:run` automated multi-agent branch-diff review workflow (delegates
+reviewers and verifier to `cue-agent` agents via the `delegate` tool).
 
 Listeners:
 

@@ -133,6 +133,7 @@ describe("command registration", () => {
       "cue:init:review",
       "cue:resume",
       "mcp-cast",
+      "review:run",
     ])
   })
 })
@@ -202,7 +203,7 @@ describe("contextChildren helper", () => {
 
 describe("/cue:resume", () => {
   test("composes the orientation message and gathers in template order", async () => {
-    const { msg, execCalls } = await runCommand("cue:resume", "", {
+    const { msg, execCalls } = await runCommand("cue:resume", "continue with step 3", {
       handler: orientationPi(),
     })
 
@@ -215,6 +216,7 @@ describe("/cue:resume", () => {
       ["render", "spec/index.md", "plan/index.md"],
     ])
 
+    expect(msg).toContain("<user-instructions>\ncontinue with step 3\n</user-instructions>")
     expect(msg).toContain("PWD: /work")
     expect(msg).toContain("BASE_BRANCH=master")
     expect(msg).toContain("CURRENT_BRANCH=feature/x")
@@ -335,5 +337,30 @@ describe("/cue:idea", () => {
     expect(msg).toContain(
       "Load the `cue-idea` skill and follow it for the idea in `<idea>`.",
     )
+  })
+})
+
+describe("/review:run", () => {
+  test("sends the workflow prompt with resolved arguments", async () => {
+    const { msg, execCalls, sent } = await runCommand(
+      "review:run",
+      "--reviewers opus,glm",
+      { handler: orientationPi() },
+    )
+    expect(execCalls).toHaveLength(0)
+    expect(sent).toHaveLength(1)
+    expect(msg).toContain("<arguments>\n--reviewers opus,glm\n</arguments>")
+    expect(msg).toContain("PWD: /work")
+    expect(msg).toContain("# Automated Code Diff Review Workflow")
+    expect(msg).toContain("delegate")
+    expect(msg).toContain("review-findings.json")
+  })
+
+  test("omits the arguments block when none are given", async () => {
+    const { msg } = await runCommand("review:run", "", {
+      handler: orientationPi(),
+    })
+    expect(msg).not.toContain("<arguments>")
+    expect(msg).toContain("# Automated Code Diff Review Workflow")
   })
 })
