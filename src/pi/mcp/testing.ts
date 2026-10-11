@@ -32,6 +32,7 @@ export function makeFakePi(excluded: string[] = [], builtins: string[] = ["read"
     on: (event: string, handler: (event: any, ctx: any) => unknown) => {
       handlers.set(event, [...(handlers.get(event) ?? []), handler])
     },
+    registerShortcut: () => {},
     registerCommand: (name: string, options: any) => commands.set(name, options),
   } as unknown as ExtensionAPI
 

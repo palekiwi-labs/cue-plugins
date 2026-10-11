@@ -62,6 +62,7 @@ function setup(opts: { pins: string; pick?: string; idle?: boolean }) {
   const names: string[] = []
   let selectCalls = 0
   const pi = {
+    registerShortcut: () => {},
     registerCommand: (_n: string, o: { handler: typeof handler }) => {
       handler = o.handler
     },

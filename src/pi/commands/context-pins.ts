@@ -1,6 +1,6 @@
 import type {
   ExtensionAPI,
-  ExtensionCommandContext,
+  ExtensionContext,
 } from "@earendil-works/pi-coding-agent"
 import { contextChildren } from "../lib/context-children"
 import {
@@ -74,7 +74,7 @@ export async function injectContext(
 
 async function handler(
   pi: ExtensionAPI,
-  ctx: ExtensionCommandContext,
+  ctx: ExtensionContext,
 ): Promise<void> {
   if (!ctx.isIdle()) {
     ctx.ui.notify("cue: wait for the agent to finish first", "warning")
@@ -104,10 +104,20 @@ async function handler(
   await injectContext(pi, ctx.cwd, picked.address)
 }
 
-/** Register `/cue:context:pins`: pick a pinned context and inject it. */
+/** Keybinding that opens the pins picker, same as `/cue:context:pins`. */
+export const CONTEXT_PINS_SHORTCUT = "alt+c"
+
+/**
+ * Register `/cue:context:pins` and its keybinding: pick a pinned context
+ * and inject it.
+ */
 export function registerContextPinsCommand(pi: ExtensionAPI): void {
   pi.registerCommand("cue:context:pins", {
     description: "Pick a pinned cue context and inject it into the session",
     handler: async (_args, ctx) => handler(pi, ctx),
+  })
+  pi.registerShortcut(CONTEXT_PINS_SHORTCUT, {
+    description: "Pick a pinned cue context and inject it into the session",
+    handler: async (ctx) => handler(pi, ctx),
   })
 }
