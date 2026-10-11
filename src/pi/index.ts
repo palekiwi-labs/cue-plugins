@@ -7,6 +7,7 @@ import { registerInitCommands } from "./commands/init"
 import { registerResumeCommand } from "./commands/resume"
 import { registerReviewRunCommand } from "./commands/review-run"
 import { registerMcpCastAdapter } from "./mcp"
+import { registerSessionNaming } from "./session-name"
 import { registerCueSkillInjection } from "./skill-injection"
 import { cueAddTool } from "./tools/cue-add"
 import { cueContextTool } from "./tools/cue-context"
@@ -49,4 +50,5 @@ export default function cuePlugins(pi: ExtensionAPI): void {
   registerAcuityListener(pi)
   registerMcpCastAdapter(pi)
   registerCueSkillInjection(pi)
+  registerSessionNaming(pi)
 }

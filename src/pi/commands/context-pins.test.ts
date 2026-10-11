@@ -47,6 +47,7 @@ function setup(opts: { pins: string; pick?: string; idle?: boolean }) {
   let handler!: (args: string, ctx: ExtensionCommandContext) => Promise<void>
   const sent: { message: any; options: unknown }[] = []
   const notes: string[] = []
+  const names: string[] = []
   let selectCalls = 0
   const pi = {
     registerCommand: (_n: string, o: { handler: typeof handler }) => {
@@ -55,6 +56,7 @@ function setup(opts: { pins: string; pick?: string; idle?: boolean }) {
     sendMessage: (message: unknown, options?: unknown) => {
       sent.push({ message, options })
     },
+    setSessionName: (n: string) => names.push(n),
     exec: async (cmd: string, args: string[]) => {
       if (cmd === "cue" && args[0] === "context" && args[1] === "pins") {
         return { stdout: opts.pins, stderr: "", code: 0, killed: false }
@@ -74,7 +76,13 @@ function setup(opts: { pins: string; pick?: string; idle?: boolean }) {
     },
   } as unknown as ExtensionCommandContext
   registerContextPinsCommand(pi)
-  return { run: () => handler("", ctx), sent, notes, selects: () => selectCalls }
+  return {
+    run: () => handler("", ctx),
+    sent,
+    notes,
+    names,
+    selects: () => selectCalls,
+  }
 }
 
 describe("/cue:context:pins", () => {
@@ -88,6 +96,7 @@ describe("/cue:context:pins", () => {
     expect(message.display).toBe(true)
     expect(message.details).toEqual({ address: "a/b/two" })
     expect(message.content).toContain("Active cue context for this session: two")
+    expect(s.names).toEqual(["two"])
   })
 
   test("no pins: notifies, no picker", async () => {

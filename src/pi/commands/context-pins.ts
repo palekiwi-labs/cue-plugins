@@ -9,6 +9,7 @@ import {
   parsePins,
   slugOf,
 } from "../lib/current-context"
+import { applyContextName } from "../session-name"
 import { formatGitContext, gitContext } from "../lib/git-context"
 import { composeMessage, cueBestEffort } from "./common"
 
@@ -67,6 +68,7 @@ export async function injectContext(
     display: true,
     details,
   })
+  await applyContextName(pi, address)
 }
 
 async function handler(
