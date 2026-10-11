@@ -123,16 +123,8 @@ describe("command registration", () => {
     const { pi, commands } = makeCommandPi()
     cuePlugins(pi)
     expect(Object.keys(commands).sort()).toEqual([
-      "cue:context",
       "cue:context:pins",
       "cue:idea",
-      "cue:init",
-      "cue:init:build",
-      "cue:init:design",
-      "cue:init:learn",
-      "cue:init:research",
-      "cue:init:review",
-      "cue:resume",
       "mcp-cast",
       "review:run",
     ])
@@ -199,131 +191,6 @@ describe("contextChildren helper", () => {
       }),
     )
     expect(block).toBe("")
-  })
-})
-
-describe("/cue:resume", () => {
-  test("composes the orientation message and gathers in template order", async () => {
-    const { msg, execCalls } = await runCommand("cue:resume", "continue with step 3", {
-      handler: orientationPi(),
-    })
-
-    const cueCalls = execCalls.filter((c) => c.command === "cue").map((c) => c.args)
-    expect(cueCalls).toEqual([
-      ["status"],
-      ["status", "--json"],
-      ["context", "list", "--scope", "store", "--filter", "parent=scope/repo/ctx"],
-      ["log", "list", "--format", "md"],
-      ["render", "spec/index.md", "plan/index.md"],
-    ])
-
-    expect(msg).toContain("<user-instructions>\ncontinue with step 3\n</user-instructions>")
-    expect(msg).toContain("PWD: /work")
-    expect(msg).toContain("BASE_BRANCH=master")
-    expect(msg).toContain("CURRENT_BRANCH=feature/x")
-    expect(msg).toContain("MERGE_BASE=abc123")
-    expect(msg).toContain("<status>\nactive context: ctx\n</status>")
-    expect(msg).toContain(
-      "<children>\nscope/repo/child-a\nscope/repo/child-b\n</children>",
-    )
-    expect(msg).toContain("<log>\n- **Milestone:** shipped\n</log>")
-    expect(msg).toContain("SPEC\nPLAN")
-    expect(msg).not.toContain("Load the `cue` skill.")
-    expect(msg).toContain("**DO NOT** perform any further research")
-  })
-
-  test("omits the children block when the list is empty", async () => {
-    const { msg } = await runCommand("cue:resume", "", {
-      handler: orientationPi({
-        "context list --scope store --filter parent=scope/repo/ctx": ok(""),
-      }),
-    })
-    expect(msg).not.toContain("<children>")
-  })
-
-  test("keeps the message shape when cue status fails", async () => {
-    const { msg } = await runCommand("cue:resume", "", {
-      handler: orientationPi({ status: fail() }),
-    })
-    expect(msg).toContain("<status>\n\n</status>")
-  })
-
-  test("queues as followUp when the agent is not idle", async () => {
-    const { sent } = await runCommand("cue:resume", "", {
-      idle: false,
-      handler: orientationPi(),
-    })
-    expect(sent[0].options?.deliverAs).toBe("followUp")
-  })
-})
-
-describe("/cue:context", () => {
-  test("scopes every cue call to the slug and renders only the plan", async () => {
-    const { msg, execCalls } = await runCommand(
-      "cue:context",
-      "auth do the thing",
-      { handler: orientationPi() },
-    )
-    const cueCalls = execCalls.filter((c) => c.command === "cue").map((c) => c.args)
-    expect(cueCalls).toEqual([
-      ["status", "--context", "auth"],
-      ["status", "--context", "auth", "--json"],
-      ["context", "list", "--scope", "store", "--filter", "parent=scope/repo/ctx"],
-      ["log", "list", "--context", "auth", "--format", "md"],
-      ["render", "--context", "auth", "plan/index.md"],
-    ])
-    expect(msg).toContain("<user-instructions>\ndo the thing\n</user-instructions>")
-    expect(msg).toContain("<status>\nactive context: ctx\n</status>")
-  })
-
-  test("empty instructions still render an empty block", async () => {
-    const { msg } = await runCommand("cue:context", "auth", {
-      handler: orientationPi(),
-    })
-    expect(msg).toContain("<user-instructions>\n\n</user-instructions>")
-  })
-
-  test("asks for a slug when none is given", async () => {
-    const { msg, execCalls } = await runCommand("cue:context", "  ", {
-      handler: orientationPi(),
-    })
-    expect(execCalls).toHaveLength(0)
-    expect(msg).toContain("Usage")
-  })
-})
-
-describe("/cue:init", () => {
-  test("base init sends instructions without git or cue calls", async () => {
-    const { msg, execCalls, sent } = await runCommand(
-      "cue:init",
-      "build the auth flow",
-      { handler: orientationPi() },
-    )
-    expect(execCalls).toHaveLength(0)
-    expect(sent).toHaveLength(1)
-    expect(msg).toContain("<user-instructions>\nbuild the auth flow\n</user-instructions>")
-    expect(msg).toContain("PWD: /work")
-    expect(msg).not.toContain("Load the `cue` skill.")
-    expect(msg).toContain("Call `cue-context` with that name")
-    expect(msg).not.toContain("BASE_BRANCH")
-  })
-
-  test("build variant injects git context and its skill line", async () => {
-    const { msg } = await runCommand("cue:init:build", "ship it", {
-      handler: orientationPi(),
-    })
-    expect(msg).toContain("BASE_BRANCH=master")
-    expect(msg).toContain("Load the `cue-build`, `git-commit` and `tdd` skills.")
-    expect(msg).toContain('Call `cue-context` with `mode: "build"` and `kind: "work"`.')
-  })
-
-  test("design variant has no git context", async () => {
-    const { msg, execCalls } = await runCommand("cue:init:design", "", {
-      handler: orientationPi(),
-    })
-    expect(execCalls).toHaveLength(0)
-    expect(msg).not.toContain("BASE_BRANCH")
-    expect(msg).toContain("Load the `cue-design` skill.")
   })
 })
 

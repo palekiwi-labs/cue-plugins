@@ -59,11 +59,14 @@ Tools (parity with opencode): `cue-add`, `cue-context`,
 `cue-context-usage`, `cue-log`, `cue-plan`, `cue-review`, `cue-task`,
 `save-branch-diff`.
 
-Commands: `/cue:init` (plus `/cue:init:build`, `/cue:init:design`,
-`/cue:init:learn`, `/cue:init:research`, `/cue:init:review`),
-`/cue:resume`, `/cue:context <slug>`, `/cue:idea`, plus the pi-only
+Commands: `/cue:context:pins` (pick a pinned context and inject its
+orientation into the session without starting a turn; the session and
+tmux window are named after its slug), `/cue:idea`, plus the pi-only
 `/review:run` automated multi-agent branch-diff review workflow (delegates
 reviewers and verifier to `cue-agent` agents via the `delegate` tool).
+
+Prompt templates (`prompts/pi/`): `/cue:init [instructions]` summarises
+the injected context (Intent, Status, Next Steps).
 
 Listeners:
 
