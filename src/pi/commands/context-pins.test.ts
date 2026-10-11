@@ -9,6 +9,7 @@ import {
   parsePinned,
   slugOf,
 } from "../lib/current-context"
+import { fuzzyNarrow } from "../lib/fuzzy-select"
 import { registerContextPinsCommand } from "./context-pins"
 
 describe("current-context helpers", () => {
@@ -80,9 +81,9 @@ function setup(opts: { pins: string; pick?: string; idle?: boolean }) {
     isIdle: () => opts.idle ?? true,
     ui: {
       notify: (m: string) => notes.push(m),
-      select: async () => {
+      custom: async () => {
         selectCalls++
-        return opts.pick
+        return opts.pick ?? null
       },
     },
   } as unknown as ExtensionCommandContext
@@ -129,5 +130,16 @@ describe("/cue:context:pins", () => {
     await s.run()
     expect(s.selects()).toBe(0)
     expect(s.sent).toHaveLength(0)
+  })
+})
+
+describe("fuzzyNarrow", () => {
+  const items = ["pi-session-naming", "pi-tmux-session-state", "cue-lsp"]
+  test("empty query keeps the recency order", () => {
+    expect(fuzzyNarrow(items, "")).toEqual(items)
+  })
+  test("fuzzy query narrows", () => {
+    expect(fuzzyNarrow(items, "tmx")).toEqual(["pi-tmux-session-state"])
+    expect(fuzzyNarrow(items, "clsp")).toEqual(["cue-lsp"])
   })
 })

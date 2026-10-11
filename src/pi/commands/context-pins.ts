@@ -10,6 +10,7 @@ import {
   slugOf,
 } from "../lib/current-context"
 import { applyContextName } from "../session-name"
+import { fuzzySelect } from "../lib/fuzzy-select"
 import { formatGitContext, gitContext } from "../lib/git-context"
 import { composeMessage, cueBestEffort } from "./common"
 
@@ -93,7 +94,8 @@ async function handler(
     ctx.ui.notify("cue: no pinned contexts in this scope", "info")
     return
   }
-  const slug = await ctx.ui.select(
+  const slug = await fuzzySelect(
+    ctx.ui,
     "Inject cue context",
     pins.map((p) => p.slug),
   )
