@@ -1,6 +1,7 @@
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent"
 import { registerAcuityListener } from "./acuity"
 import { registerContextCommand } from "./commands/context"
+import { registerContextPinsCommand } from "./commands/context-pins"
 import { registerIdeaCommand } from "./commands/idea"
 import { registerInitCommands } from "./commands/init"
 import { registerResumeCommand } from "./commands/resume"
@@ -42,6 +43,7 @@ export default function cuePlugins(pi: ExtensionAPI): void {
   registerInitCommands(pi)
   registerResumeCommand(pi)
   registerContextCommand(pi)
+  registerContextPinsCommand(pi)
   registerIdeaCommand(pi)
   registerReviewRunCommand(pi)
   registerAcuityListener(pi)

@@ -124,6 +124,7 @@ describe("command registration", () => {
     cuePlugins(pi)
     expect(Object.keys(commands).sort()).toEqual([
       "cue:context",
+      "cue:context:pins",
       "cue:idea",
       "cue:init",
       "cue:init:build",
