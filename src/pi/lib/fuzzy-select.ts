@@ -20,6 +20,18 @@ export function fuzzyNarrow(items: string[], query: string): string[] {
 }
 
 /**
+ * A picker item. `value` is what the picker resolves; `text` is what
+ * the query fuzzy-matches and what a filtered list shows (default:
+ * value). `label` (e.g. a tree-indented slug) is shown only while the
+ * query is empty, since a filtered list breaks the structure it draws.
+ */
+export interface PickItem {
+  value: string
+  text?: string
+  label?: string
+}
+
+/**
  * Like `ui.select`, with a type-to-filter fuzzy query line. Arrow keys
  * and enter/escape drive the list; every other key edits the query.
  * Resolves the chosen item, or undefined on cancel.
@@ -27,8 +39,12 @@ export function fuzzyNarrow(items: string[], query: string): string[] {
 export async function fuzzySelect(
   ui: ExtensionUIContext,
   title: string,
-  items: string[],
+  items: readonly (string | PickItem)[],
 ): Promise<string | undefined> {
+  const picks: PickItem[] = items.map((i) =>
+    typeof i === "string" ? { value: i } : i,
+  )
+
   const picked = await ui.custom<string | null>((tui, theme, kb, done) => {
     const listTheme = {
       selectedPrefix: (t: string) => theme.fg("accent", t),
@@ -43,8 +59,13 @@ export async function fuzzySelect(
     let list!: SelectList
 
     const rebuild = () => {
-      const shown = fuzzyNarrow(items, input.getValue())
-      const entries: SelectItem[] = shown.map((s) => ({ value: s, label: s }))
+      const query = input.getValue()
+      const textOf = (p: PickItem) => p.text ?? p.value
+      const shown = fuzzyFilter(picks, query, textOf)
+      const entries: SelectItem[] = shown.map((p) => ({
+        value: p.value,
+        label: query.trim() === "" ? (p.label ?? textOf(p)) : textOf(p),
+      }))
       list = new SelectList(entries, MAX_VISIBLE, listTheme)
       list.onSelect = (item) => done(item.value)
       list.onCancel = () => done(null)

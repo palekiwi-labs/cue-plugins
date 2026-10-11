@@ -7,10 +7,12 @@ import {
   CUE_CONTEXT_TYPE,
   type CueContextDetails,
   parsePinned,
+  type PinnedContext,
   slugOf,
 } from "../lib/current-context"
 import { applyContextName } from "../session-name"
-import { fuzzySelect } from "../lib/fuzzy-select"
+import { orderTree, treePrefix } from "../lib/context-tree"
+import { fuzzySelect, type PickItem } from "../lib/fuzzy-select"
 import { formatGitContext, gitContext } from "../lib/git-context"
 import { composeMessage, cueBestEffort } from "./common"
 
@@ -72,6 +74,21 @@ export async function injectContext(
   await applyContextName(pi, address)
 }
 
+/**
+ * Picker items for pinned contexts, ordered as a parent-child tree like
+ * cue.nvim's pins picker. Values are addresses (slugs may repeat across
+ * scopes); labels are the tree-indented slugs.
+ */
+export function pinItems(
+  pins: readonly PinnedContext[],
+): PickItem[] {
+  return orderTree(pins).map((e) => ({
+    value: e.row.address,
+    text: e.row.slug,
+    label: treePrefix(e) + e.row.slug,
+  }))
+}
+
 async function handler(
   pi: ExtensionAPI,
   ctx: ExtensionContext,
@@ -94,12 +111,12 @@ async function handler(
     ctx.ui.notify("cue: no pinned contexts in this scope", "info")
     return
   }
-  const slug = await fuzzySelect(
+  const address = await fuzzySelect(
     ctx.ui,
     "Inject cue context",
-    pins.map((p) => p.slug),
+    pinItems(pins),
   )
-  const picked = pins.find((p) => p.slug === slug)
+  const picked = pins.find((p) => p.address === address)
   if (!picked) return
   await injectContext(pi, ctx.cwd, picked.address)
 }

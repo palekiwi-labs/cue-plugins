@@ -10,18 +10,18 @@ import {
   slugOf,
 } from "../lib/current-context"
 import { fuzzyNarrow } from "../lib/fuzzy-select"
-import { registerContextPinsCommand } from "./context-pins"
+import { pinItems, registerContextPinsCommand } from "./context-pins"
 
 describe("current-context helpers", () => {
   test("parsePinned keeps CLI order and drops malformed rows", () => {
     const json = JSON.stringify([
-      { context: "hot", scope: "a/b", last_logged_at: 9 },
+      { context: "hot", scope: "a/b", last_logged_at: 9, parent: "a/b/x" },
       { context: 3, scope: "a/b" },
       { context: "cold", scope: "a/b", last_logged_at: null },
     ])
     expect(parsePinned(json)).toEqual([
-      { slug: "hot", address: "a/b/hot" },
-      { slug: "cold", address: "a/b/cold" },
+      { slug: "hot", address: "a/b/hot", parent: "a/b/x", lastLoggedAt: 9 },
+      { slug: "cold", address: "a/b/cold", lastLoggedAt: 0 },
     ])
     expect(parsePinned("")).toEqual([])
     expect(parsePinned("not json")).toEqual([])
@@ -100,7 +100,7 @@ function setup(opts: { pins: string; pick?: string; idle?: boolean }) {
 
 describe("/cue:context:pins", () => {
   test("injects the picked context without a turn", async () => {
-    const s = setup({ pins: pinsJson("one", "two"), pick: "two" })
+    const s = setup({ pins: pinsJson("one", "two"), pick: "a/b/two" })
     await s.run()
     expect(s.sent).toHaveLength(1)
     const { message, options } = s.sent[0]!
@@ -127,7 +127,7 @@ describe("/cue:context:pins", () => {
   })
 
   test("refuses while the agent is busy", async () => {
-    const s = setup({ pins: pinsJson("one"), pick: "one", idle: false })
+    const s = setup({ pins: pinsJson("one"), pick: "a/b/one", idle: false })
     await s.run()
     expect(s.selects()).toBe(0)
     expect(s.sent).toHaveLength(0)
@@ -142,5 +142,40 @@ describe("fuzzyNarrow", () => {
   test("fuzzy query narrows", () => {
     expect(fuzzyNarrow(items, "tmx")).toEqual(["pi-tmux-session-state"])
     expect(fuzzyNarrow(items, "clsp")).toEqual(["cue-lsp"])
+  })
+})
+
+describe("pinItems tree", () => {
+  const pin = (slug: string, t: number, parent?: string) => ({
+    slug,
+    address: `a/b/${slug}`,
+    lastLoggedAt: t,
+    ...(parent ? { parent: `a/b/${parent}` } : {}),
+  })
+
+  test("nests children under parents with connectors", () => {
+    // CLI recency order: hot child first, its parent stale.
+    const items = pinItems([
+      pin("leaf", 9, "mid"),
+      pin("solo", 5),
+      pin("other", 3, "root"),
+      pin("mid", 2, "root"),
+      pin("root", 1),
+      pin("orphan", 0, "unpinned"),
+    ])
+    expect(items.map((i) => i.label)).toEqual([
+      "root",
+      "├─mid",
+      "│ └─leaf",
+      "└─other",
+      "solo",
+      "orphan",
+    ])
+    expect(items[2]).toMatchObject({ value: "a/b/leaf", text: "leaf" })
+  })
+
+  test("survives parent cycles", () => {
+    const items = pinItems([pin("x", 1, "y"), pin("y", 2, "x")])
+    expect(items.map((i) => i.text).sort()).toEqual(["x", "y"])
   })
 })

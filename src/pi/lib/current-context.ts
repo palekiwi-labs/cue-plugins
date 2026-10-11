@@ -28,6 +28,10 @@ export function slugOf(address: string): string {
 export interface PinnedContext {
   slug: string
   address: string
+  /** Canonical address of the parent context, when it has one. */
+  parent?: string
+  /** Newest log entry (Unix seconds); 0 when never logged. */
+  lastLoggedAt: number
 }
 
 /**
@@ -44,9 +48,21 @@ export function parsePinned(stdout: string): PinnedContext[] {
   }
   if (!Array.isArray(rows)) return []
   const out: PinnedContext[] = []
-  for (const r of rows as { context?: unknown; scope?: unknown }[]) {
+  for (const r of rows as {
+    context?: unknown
+    scope?: unknown
+    parent?: unknown
+    last_logged_at?: unknown
+  }[]) {
     if (typeof r?.context !== "string" || typeof r?.scope !== "string") continue
-    out.push({ slug: r.context, address: `${r.scope}/${r.context}` })
+    const pin: PinnedContext = {
+      slug: r.context,
+      address: `${r.scope}/${r.context}`,
+      lastLoggedAt:
+        typeof r.last_logged_at === "number" ? r.last_logged_at : 0,
+    }
+    if (typeof r.parent === "string" && r.parent !== "") pin.parent = r.parent
+    out.push(pin)
   }
   return out
 }
