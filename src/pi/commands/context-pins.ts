@@ -6,7 +6,7 @@ import { contextChildren } from "../lib/context-children"
 import {
   CUE_CONTEXT_TYPE,
   type CueContextDetails,
-  parsePins,
+  parsePinned,
   slugOf,
 } from "../lib/current-context"
 import { applyContextName } from "../session-name"
@@ -79,16 +79,27 @@ async function handler(
     ctx.ui.notify("cue: wait for the agent to finish first", "warning")
     return
   }
-  const pins = parsePins(
-    await cueBestEffort(pi, ctx.cwd, ["context", "pins"]),
+  const pins = parsePinned(
+    await cueBestEffort(pi, ctx.cwd, [
+      "context",
+      "list",
+      "--json",
+      "--pinned",
+      "--sort",
+      "recency",
+    ]),
   )
   if (pins.length === 0) {
     ctx.ui.notify("cue: no pinned contexts in this scope", "info")
     return
   }
-  const picked = await ctx.ui.select("Inject cue context", pins)
+  const slug = await ctx.ui.select(
+    "Inject cue context",
+    pins.map((p) => p.slug),
+  )
+  const picked = pins.find((p) => p.slug === slug)
   if (!picked) return
-  await injectContext(pi, ctx.cwd, picked)
+  await injectContext(pi, ctx.cwd, picked.address)
 }
 
 /** Register `/cue:context:pins`: pick a pinned context and inject it. */

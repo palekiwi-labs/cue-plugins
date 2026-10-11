@@ -6,18 +6,24 @@ import type {
 import {
   CUE_CONTEXT_TYPE,
   currentContext,
-  parsePins,
+  parsePinned,
   slugOf,
 } from "../lib/current-context"
 import { registerContextPinsCommand } from "./context-pins"
 
 describe("current-context helpers", () => {
-  test("parsePins splits lines and drops blanks", () => {
-    expect(parsePins("a/b/one\n\n  a/b/two  \n")).toEqual([
-      "a/b/one",
-      "a/b/two",
+  test("parsePinned keeps CLI order and drops malformed rows", () => {
+    const json = JSON.stringify([
+      { context: "hot", scope: "a/b", last_logged_at: 9 },
+      { context: 3, scope: "a/b" },
+      { context: "cold", scope: "a/b", last_logged_at: null },
     ])
-    expect(parsePins("")).toEqual([])
+    expect(parsePinned(json)).toEqual([
+      { slug: "hot", address: "a/b/hot" },
+      { slug: "cold", address: "a/b/cold" },
+    ])
+    expect(parsePinned("")).toEqual([])
+    expect(parsePinned("not json")).toEqual([])
   })
 
   test("slugOf takes the last address segment", () => {
@@ -43,6 +49,11 @@ describe("current-context helpers", () => {
   })
 })
 
+const LIST_PINNED = "context list --json --pinned --sort recency"
+
+const pinsJson = (...slugs: string[]) =>
+  JSON.stringify(slugs.map((context) => ({ context, scope: "a/b" })))
+
 function setup(opts: { pins: string; pick?: string; idle?: boolean }) {
   let handler!: (args: string, ctx: ExtensionCommandContext) => Promise<void>
   const sent: { message: any; options: unknown }[] = []
@@ -58,7 +69,7 @@ function setup(opts: { pins: string; pick?: string; idle?: boolean }) {
     },
     setSessionName: (n: string) => names.push(n),
     exec: async (cmd: string, args: string[]) => {
-      if (cmd === "cue" && args[0] === "context" && args[1] === "pins") {
+      if (cmd === "cue" && args.join(" ") === LIST_PINNED) {
         return { stdout: opts.pins, stderr: "", code: 0, killed: false }
       }
       return { stdout: "", stderr: "", code: 1, killed: false }
@@ -87,7 +98,7 @@ function setup(opts: { pins: string; pick?: string; idle?: boolean }) {
 
 describe("/cue:context:pins", () => {
   test("injects the picked context without a turn", async () => {
-    const s = setup({ pins: "a/b/one\na/b/two\n", pick: "a/b/two" })
+    const s = setup({ pins: pinsJson("one", "two"), pick: "two" })
     await s.run()
     expect(s.sent).toHaveLength(1)
     const { message, options } = s.sent[0]!
@@ -100,7 +111,7 @@ describe("/cue:context:pins", () => {
   })
 
   test("no pins: notifies, no picker", async () => {
-    const s = setup({ pins: "" })
+    const s = setup({ pins: "[]" })
     await s.run()
     expect(s.selects()).toBe(0)
     expect(s.sent).toHaveLength(0)
@@ -108,13 +119,13 @@ describe("/cue:context:pins", () => {
   })
 
   test("cancel is a no-op", async () => {
-    const s = setup({ pins: "a/b/one" })
+    const s = setup({ pins: pinsJson("one") })
     await s.run()
     expect(s.sent).toHaveLength(0)
   })
 
   test("refuses while the agent is busy", async () => {
-    const s = setup({ pins: "a/b/one", pick: "a/b/one", idle: false })
+    const s = setup({ pins: pinsJson("one"), pick: "one", idle: false })
     await s.run()
     expect(s.selects()).toBe(0)
     expect(s.sent).toHaveLength(0)

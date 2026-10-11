@@ -25,12 +25,30 @@ export function slugOf(address: string): string {
   return parts[parts.length - 1] ?? ""
 }
 
-/** Parse `cue context pins` output: one canonical address per line. */
-export function parsePins(stdout: string): string[] {
-  return stdout
-    .split("\n")
-    .map((l) => l.trim())
-    .filter((l) => l !== "")
+export interface PinnedContext {
+  slug: string
+  address: string
+}
+
+/**
+ * Parse `cue context list --json --pinned --sort recency`: keep the CLI
+ * order (newest log entry first, never-logged last) and drop malformed
+ * rows.
+ */
+export function parsePinned(stdout: string): PinnedContext[] {
+  let rows: unknown
+  try {
+    rows = JSON.parse(stdout || "[]")
+  } catch {
+    return []
+  }
+  if (!Array.isArray(rows)) return []
+  const out: PinnedContext[] = []
+  for (const r of rows as { context?: unknown; scope?: unknown }[]) {
+    if (typeof r?.context !== "string" || typeof r?.scope !== "string") continue
+    out.push({ slug: r.context, address: `${r.scope}/${r.context}` })
+  }
+  return out
 }
 
 /**
