@@ -75,6 +75,21 @@ export async function injectContext(
 }
 
 /**
+ * Associate a context with the session without telling the model: a
+ * `custom` session entry (never in the LLM context) records it for
+ * currentContext, and the session and tmux window take its slug. Safe
+ * while the agent is busy since the conversation is untouched.
+ */
+export async function linkContext(
+  pi: ExtensionAPI,
+  address: string,
+): Promise<void> {
+  const data: CueContextDetails = { address }
+  pi.appendEntry(CUE_CONTEXT_TYPE, data)
+  await applyContextName(pi, address)
+}
+
+/**
  * Picker items for pinned contexts, ordered as a parent-child tree like
  * cue.nvim's pins picker. Values are addresses (slugs may repeat across
  * scopes); labels are the tree-indented slugs.
@@ -93,10 +108,6 @@ async function handler(
   pi: ExtensionAPI,
   ctx: ExtensionContext,
 ): Promise<void> {
-  if (!ctx.isIdle()) {
-    ctx.ui.notify("cue: wait for the agent to finish first", "warning")
-    return
-  }
   const pins = parsePinned(
     await cueBestEffort(pi, ctx.cwd, [
       "context",
@@ -111,13 +122,23 @@ async function handler(
     ctx.ui.notify("cue: no pinned contexts in this scope", "info")
     return
   }
-  const address = await fuzzySelect(
-    ctx.ui,
-    "Inject cue context",
-    pinItems(pins),
-  )
-  const picked = pins.find((p) => p.address === address)
-  if (!picked) return
+  const choice = await fuzzySelect(ctx.ui, "Cue context", pinItems(pins), {
+    submitHint: "inject",
+    altHint: "link only",
+  })
+  const picked = pins.find((p) => p.address === choice?.value)
+  if (!picked || !choice) return
+  if (choice.action === "alt") {
+    await linkContext(pi, picked.address)
+    return
+  }
+  if (!ctx.isIdle()) {
+    ctx.ui.notify(
+      "cue: wait for the agent to finish to inject (alt+enter links only)",
+      "warning",
+    )
+    return
+  }
   await injectContext(pi, ctx.cwd, picked.address)
 }
 
@@ -126,15 +147,17 @@ export const CONTEXT_PINS_SHORTCUT = "alt+c"
 
 /**
  * Register `/cue:context:pins` and its keybinding: pick a pinned context
- * and inject it.
+ * and inject it (enter) or only link it to the session (alt+enter).
  */
 export function registerContextPinsCommand(pi: ExtensionAPI): void {
   pi.registerCommand("cue:context:pins", {
-    description: "Pick a pinned cue context and inject it into the session",
+    description:
+      "Pick a pinned cue context: enter injects it, alt+enter only links it",
     handler: async (_args, ctx) => handler(pi, ctx),
   })
   pi.registerShortcut(CONTEXT_PINS_SHORTCUT, {
-    description: "Pick a pinned cue context and inject it into the session",
+    description:
+      "Pick a pinned cue context: enter injects it, alt+enter only links it",
     handler: async (ctx) => handler(pi, ctx),
   })
 }

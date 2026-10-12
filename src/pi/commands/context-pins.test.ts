@@ -48,6 +48,24 @@ describe("current-context helpers", () => {
       ]),
     ).toBe("a/b/second")
   })
+
+  test("currentContext: a link entry and an injection, newest wins", () => {
+    const link = (address: string) => ({
+      type: "custom",
+      customType: CUE_CONTEXT_TYPE,
+      data: { address },
+    })
+    const inj = (address: string) => ({
+      type: "custom_message",
+      customType: CUE_CONTEXT_TYPE,
+      details: { address },
+    })
+    expect(currentContext([inj("a/b/one"), link("a/b/two")])).toBe("a/b/two")
+    expect(currentContext([link("a/b/two"), inj("a/b/one")])).toBe("a/b/one")
+    expect(
+      currentContext([link("a/b/one"), { type: "custom", customType: "x" }]),
+    ).toBe("a/b/one")
+  })
 })
 
 const LIST_PINNED = "context list --json --pinned --sort recency"
@@ -55,11 +73,17 @@ const LIST_PINNED = "context list --json --pinned --sort recency"
 const pinsJson = (...slugs: string[]) =>
   JSON.stringify(slugs.map((context) => ({ context, scope: "a/b" })))
 
-function setup(opts: { pins: string; pick?: string; idle?: boolean }) {
+function setup(opts: {
+  pins: string
+  pick?: string
+  action?: "submit" | "alt"
+  idle?: boolean
+}) {
   let handler!: (args: string, ctx: ExtensionCommandContext) => Promise<void>
   const sent: { message: any; options: unknown }[] = []
   const notes: string[] = []
   const names: string[] = []
+  const entries: { customType: string; data: unknown }[] = []
   let selectCalls = 0
   const pi = {
     registerShortcut: () => {},
@@ -70,6 +94,8 @@ function setup(opts: { pins: string; pick?: string; idle?: boolean }) {
       sent.push({ message, options })
     },
     setSessionName: (n: string) => names.push(n),
+    appendEntry: (customType: string, data: unknown) =>
+      entries.push({ customType, data }),
     exec: async (cmd: string, args: string[]) => {
       if (cmd === "cue" && args.join(" ") === LIST_PINNED) {
         return { stdout: opts.pins, stderr: "", code: 0, killed: false }
@@ -84,7 +110,9 @@ function setup(opts: { pins: string; pick?: string; idle?: boolean }) {
       notify: (m: string) => notes.push(m),
       custom: async () => {
         selectCalls++
-        return opts.pick ?? null
+        return opts.pick
+          ? { value: opts.pick, action: opts.action ?? "submit" }
+          : null
       },
     },
   } as unknown as ExtensionCommandContext
@@ -94,6 +122,7 @@ function setup(opts: { pins: string; pick?: string; idle?: boolean }) {
     sent,
     notes,
     names,
+    entries,
     selects: () => selectCalls,
   }
 }
@@ -126,11 +155,27 @@ describe("/cue:context:pins", () => {
     expect(s.sent).toHaveLength(0)
   })
 
-  test("refuses while the agent is busy", async () => {
+  test("refuses to inject while the agent is busy", async () => {
     const s = setup({ pins: pinsJson("one"), pick: "a/b/one", idle: false })
     await s.run()
-    expect(s.selects()).toBe(0)
     expect(s.sent).toHaveLength(0)
+    expect(s.entries).toHaveLength(0)
+    expect(s.notes).toHaveLength(1)
+  })
+
+  test("alt submit links without injecting, even while busy", async () => {
+    const s = setup({
+      pins: pinsJson("one", "two"),
+      pick: "a/b/two",
+      action: "alt",
+      idle: false,
+    })
+    await s.run()
+    expect(s.sent).toHaveLength(0)
+    expect(s.entries).toEqual([
+      { customType: CUE_CONTEXT_TYPE, data: { address: "a/b/two" } },
+    ])
+    expect(s.names).toEqual(["two"])
   })
 })
 

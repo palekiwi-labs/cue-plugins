@@ -4,6 +4,7 @@ import {
   Container,
   fuzzyFilter,
   Input,
+  matchesKey,
   type SelectItem,
   SelectList,
   Text,
@@ -32,20 +33,43 @@ export interface PickItem {
 }
 
 /**
+ * How a pick was submitted: `submit` is enter; `alt` is the alternative
+ * submit key (ALT_SUBMIT_KEY), offered only when the caller names it.
+ */
+export type PickAction = "submit" | "alt"
+
+export interface Picked {
+  value: string
+  action: PickAction
+}
+
+/** Alternative submit key for fuzzySelect. */
+export const ALT_SUBMIT_KEY = "alt+enter"
+
+export interface FuzzySelectOptions {
+  /** Footer hint for the alternative submit; enables ALT_SUBMIT_KEY. */
+  altHint?: string
+  /** Footer hint for enter (default: "select"). */
+  submitHint?: string
+}
+
+/**
  * Like `ui.select`, with a type-to-filter fuzzy query line. Arrow keys
  * and enter/escape drive the list; every other key edits the query.
- * Resolves the chosen item, or undefined on cancel.
+ * Resolves the chosen item and how it was submitted, or undefined on
+ * cancel.
  */
 export async function fuzzySelect(
   ui: ExtensionUIContext,
   title: string,
   items: readonly (string | PickItem)[],
-): Promise<string | undefined> {
+  opts: FuzzySelectOptions = {},
+): Promise<Picked | undefined> {
   const picks: PickItem[] = items.map((i) =>
     typeof i === "string" ? { value: i } : i,
   )
 
-  const picked = await ui.custom<string | null>((tui, theme, kb, done) => {
+  const picked = await ui.custom<Picked | null>((tui, theme, kb, done) => {
     const listTheme = {
       selectedPrefix: (t: string) => theme.fg("accent", t),
       selectedText: (t: string) => theme.fg("accent", t),
@@ -67,13 +91,20 @@ export async function fuzzySelect(
         label: query.trim() === "" ? (p.label ?? textOf(p)) : textOf(p),
       }))
       list = new SelectList(entries, MAX_VISIBLE, listTheme)
-      list.onSelect = (item) => done(item.value)
+      list.onSelect = (item) => done({ value: item.value, action: "submit" })
       list.onCancel = () => done(null)
       holder.clear()
       holder.addChild(list)
     }
     rebuild()
 
+    const footer = [
+      "type to filter",
+      "↑↓ navigate",
+      `enter ${opts.submitHint ?? "select"}`,
+      ...(opts.altHint ? [`${ALT_SUBMIT_KEY} ${opts.altHint}`] : []),
+      "esc cancel",
+    ].join(" • ")
     const container = new Container()
     const border = () => new DynamicBorder((s: string) => theme.fg("accent", s))
     container.addChild(border())
@@ -81,7 +112,7 @@ export async function fuzzySelect(
     container.addChild(input)
     container.addChild(holder)
     container.addChild(
-      new Text(theme.fg("dim", "type to filter • ↑↓ navigate • enter select • esc cancel")),
+      new Text(theme.fg("dim", footer)),
     )
     container.addChild(border())
 
@@ -98,6 +129,11 @@ export async function fuzzySelect(
       render: (width: number) => container.render(width),
       invalidate: () => container.invalidate(),
       handleInput(data: string) {
+        if (opts.altHint && matchesKey(data, ALT_SUBMIT_KEY)) {
+          const item = list.getSelectedItem()
+          if (item) done({ value: item.value, action: "alt" })
+          return
+        }
         if (listKeys.some((k) => kb.matches(data, k))) {
           list.handleInput(data)
         } else {
