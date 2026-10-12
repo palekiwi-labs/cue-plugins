@@ -43,14 +43,14 @@ Inspect the arguments block in the user message. If non-empty, parse any agent o
 ### 1. Save Branch Diff
 Execute the \`save-branch-diff\` tool, passing the active cue context slug as \`context\`.
 - If the tool reports \`no_changes\`, inform the operator that there are no diff changes to review and stop.
-- Note the saved \`DIFF_PATH\` (ensure full path is resolved).
+- Note the saved \`DIFF_PATH\` (ensure full path is resolved) and the \`COMMIT\` (the reviewed commit hash reported by the tool's result). All worktrees in this run are pinned to \`COMMIT\` so reviewers and verifier see the identical tree even if the operator keeps committing during the run.
 - Derive \`RUN_ID\` from \`DIFF_PATH\`: the name of its immediate parent directory, of the
   form \`<created_at>-<commit_hash>\` (e.g. \`1791255981686997923-13cfd7114e\`). Every
   artifact this run writes goes under \`review/<RUN_ID>/\`, so reruns never collide
   with earlier runs (cue-review never overwrites existing files).
 
 ### 2. Dispatch Parallel Reviewers
-Dispatch the review in parallel to the two selected reviewer agents using the \`delegate\` tool with a single call (two tasks in one batch).
+Dispatch the review in parallel to the two selected reviewer agents using the \`delegate\` tool with a single call (two tasks in one batch, each with \`worktree: { base: COMMIT }\` so the reviewers read a pinned checkout of the reviewed commit instead of the live tree the operator may be editing).
 
 Pass the following prompt to each reviewer (replacing \`DIFF_PATH\` with the actual file path, \`RUN_ID\` with the run id derived in step 1, \`REVIEWER_SLUG\` with the reviewer's roster name, and \`CONTEXT_SLUG\` with the active cue context):
 
@@ -79,7 +79,7 @@ When both reviewers return:
 
 ### 4. Focused Verification Pass
 For candidate findings:
-- Invoke the selected verifier agent via the \`delegate\` tool to verify the findings and any \`unverified\` claims against the source code.
+- Invoke the selected verifier agent via the \`delegate\` tool (with \`worktree: { base: COMMIT }\`, the same commit the reviewers were pinned to) to verify the findings and any \`unverified\` claims against the source code.
 - Provide the verifier with:
   - Finding title, severity, category
   - File path, line range, snippet

@@ -8,7 +8,10 @@ function makePi() {
   const execs: { cmd: string; args: string[] }[] = []
   const handlers: Record<string, (e: unknown, ctx: unknown) => Promise<void>> =
     {}
+  let current: string | undefined
   const pi = {
+    getSessionName: () => current,
+    setName: (n: string) => (current = n),
     setSessionName: (n: string) => names.push(n),
     exec: async (cmd: string, args: string[]) => {
       execs.push({ cmd, args })
@@ -54,7 +57,7 @@ describe("registerSessionNaming", () => {
 
   test("session_start and session_tree name after the current context", async () => {
     const m = makePi()
-    registerSessionNaming(m.pi)
+    registerSessionNaming(m.pi, {})
     const inj = {
       type: "custom_message",
       customType: CUE_CONTEXT_TYPE,
@@ -65,10 +68,23 @@ describe("registerSessionNaming", () => {
     expect(m.names).toEqual(["ctx", "ctx"])
   })
 
-  test("no current context leaves the name untouched", async () => {
+  test("no current context: session name untouched, window reset to pi", async () => {
     const m = makePi()
-    registerSessionNaming(m.pi)
+    registerSessionNaming(m.pi, { TMUX: "x", TMUX_PANE: "%1" })
     await m.handlers.session_start!({}, ctx([{ type: "message" }]))
     expect(m.names).toEqual([])
+    expect(m.execs).toEqual([
+      { cmd: "tmux", args: ["rename-window", "-t", "%1", "pi"] },
+    ])
+  })
+
+  test("no current context: window follows the session's own name", async () => {
+    const m = makePi()
+    ;(m.pi as any).setName("mine")
+    registerSessionNaming(m.pi, { TMUX: "x" })
+    await m.handlers.session_start!({}, ctx([]))
+    expect(m.execs).toEqual([
+      { cmd: "tmux", args: ["rename-window", "mine"] },
+    ])
   })
 })

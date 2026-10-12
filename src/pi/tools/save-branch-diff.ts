@@ -98,6 +98,7 @@ export function saveBranchDiffTool(pi: ExtensionAPI): ToolDefinition<typeof para
       const base = resolveBase(configBase, remoteHeadRef)
 
       // 4. Generate the diff (a bad base is a real error; surface git's stderr)
+      const head = await gitText(pi, ["rev-parse", "HEAD"], targetDir)
       const diff = await runGit(pi, ["diff", `${base}...HEAD`], targetDir)
       if (diff.code !== 0) {
         throw new Error(`git diff ${base}...HEAD failed: ${diff.stderr.trim()}`)
@@ -106,8 +107,8 @@ export function saveBranchDiffTool(pi: ExtensionAPI): ToolDefinition<typeof para
 
       if (!diffContent.trim()) {
         return {
-          content: [{ type: "text", text: `No diff between ${base} and HEAD` }],
-          details: { status: "no_changes", branch, base },
+          content: [{ type: "text", text: `No diff between ${base} and ${head}` }],
+          details: { status: "no_changes", branch, base, commit: head },
         }
       }
 
@@ -132,8 +133,8 @@ export function saveBranchDiffTool(pi: ExtensionAPI): ToolDefinition<typeof para
       )
 
       return {
-        content: [{ type: "text", text: output }],
-        details: { status: "success", branch, base },
+        content: [{ type: "text", text: `${output}\nReviewed commit: ${head}` }],
+        details: { status: "success", branch, base, commit: head },
       }
     },
   }

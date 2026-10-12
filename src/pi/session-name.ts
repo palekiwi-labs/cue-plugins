@@ -14,10 +14,22 @@ export async function applyContextName(
   const slug = slugOf(address)
   if (!slug) return
   pi.setSessionName(slug)
+  await renameTmuxWindow(pi, slug, env)
+}
+
+/** Window name for a session with no cue context and no name of its own. */
+export const DEFAULT_WINDOW_NAME = "pi"
+
+/** Rename the tmux window holding this pane; no-op outside tmux. */
+export async function renameTmuxWindow(
+  pi: ExtensionAPI,
+  name: string,
+  env: NodeJS.ProcessEnv = process.env,
+): Promise<void> {
   if (!env.TMUX) return
   const target = env.TMUX_PANE ? ["-t", env.TMUX_PANE] : []
   try {
-    await pi.exec("tmux", ["rename-window", ...target, slug])
+    await pi.exec("tmux", ["rename-window", ...target, name])
   } catch {
     // not fatal: naming is cosmetic
   }
@@ -26,14 +38,26 @@ export async function applyContextName(
 /**
  * Re-apply the name whenever the current context may have changed
  * outside an injection: session start/resume/fork and tree navigation.
- * No current context leaves names untouched.
+ * With no current context the session name is left alone and the tmux
+ * window follows the session: its own name if it has one (e.g. /name),
+ * else "pi" -- so switching to a new session does not keep the
+ * previous session's window name.
  */
-export function registerSessionNaming(pi: ExtensionAPI): void {
+export function registerSessionNaming(
+  pi: ExtensionAPI,
+  env: NodeJS.ProcessEnv = process.env,
+): void {
   const sync = async (ctx: {
     sessionManager: { getBranch(): readonly { type: string }[] }
   }) => {
     const address = currentContext(ctx.sessionManager.getBranch())
-    if (address) await applyContextName(pi, address)
+    if (address) await applyContextName(pi, address, env)
+    else
+      await renameTmuxWindow(
+        pi,
+        pi.getSessionName() || DEFAULT_WINDOW_NAME,
+        env,
+      )
   }
   pi.on("session_start", async (_e, ctx) => sync(ctx))
   pi.on("session_tree", async (_e, ctx) => sync(ctx))

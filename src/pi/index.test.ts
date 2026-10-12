@@ -287,6 +287,7 @@ describe("save-branch-diff", () => {
       if (call.command === "git" && call.args[0] === "branch") return ok("feat/x\n")
       if (call.command === "git" && call.args[0] === "config") return ok("master\n")
       if (call.command === "git" && call.args[0] === "symbolic-ref") return ok("origin/master\n")
+      if (call.command === "git" && call.args[0] === "rev-parse") return ok("abc1234\n")
       if (call.command === "git" && call.args[0] === "diff") return ok("diff --git a/f\n")
       return ok()
     }
@@ -298,7 +299,7 @@ describe("save-branch-diff", () => {
     const t = tools.find((x) => x.name === "save-branch-diff")!
     const result = await t.execute("id", { context: "ctx" } as any, undefined, undefined, fakeCtx())
     const gitCalls = execCalls.filter((c) => c.command === "git").map((c) => c.args[0])
-    expect(gitCalls).toEqual(["branch", "config", "symbolic-ref", "diff"])
+    expect(gitCalls).toEqual(["branch", "config", "symbolic-ref", "rev-parse", "diff"])
 
     const cueCall = execCalls.find((c) => c.command === "cue")!
     expect(cueCall.args[0]).toBe("add")
@@ -308,7 +309,7 @@ describe("save-branch-diff", () => {
     expect(cueCall.args[cueCall.args.indexOf("--file") + 1]).toMatch(/\.diff$/)
     expect(cueCall.args[cueCall.args.length - 1]).toBe("feat-x.diff")
     expect(cueCall.cwd).toBe("/work")
-    expect(result.details).toEqual({ status: "success", branch: "feat/x", base: "master" })
+    expect(result.details).toEqual({ status: "success", branch: "feat/x", base: "master", commit: "abc1234" })
   })
 
   test("empty diff reports no_changes without invoking cue", async () => {
@@ -320,7 +321,7 @@ describe("save-branch-diff", () => {
     const result: any = await t.execute("id", { context: "ctx" } as any, undefined, undefined, fakeCtx())
     expect(execCalls.find((c) => c.command === "cue")).toBeUndefined()
     expect(result.details.status).toBe("no_changes")
-    expect(result.content[0].text).toContain("No diff between master and HEAD")
+    expect(result.content[0].text).toContain("No diff between master and abc1234")
   })
 
   test("git diff failure surfaces stderr", async () => {

@@ -76,6 +76,11 @@ export function buildDescription(agents: AgentInfo[]): string {
     "",
     "Available agents:",
     roster,
+    "",
+    "Per task, set worktree: true to run the agent in a throwaway git",
+    "worktree of the session repo at its current HEAD, deleted when the",
+    "task finishes — use it when the agent inspects source while the",
+    "operator keeps editing the branch (e.g. code reviews).",
   ].join("\n")
 }
 

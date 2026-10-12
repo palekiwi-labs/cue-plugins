@@ -26,6 +26,33 @@ function makeParameters(names: string[]) {
             "Self-contained instructions. The agent cannot see this " +
             "conversation; include the goal, paths, facts, and what to return.",
         }),
+        worktree: Type.Optional(
+          Type.Union(
+            [
+              Type.Boolean({
+                description:
+                  "Shorthand for { base: 'HEAD' }: throwaway worktree at " +
+                  "the session repo's current HEAD.",
+              }),
+              Type.Object({
+                base: Type.String({
+                  description:
+                    "Git revision (commit hash, branch, or tag) the " +
+                    "worktree is created at. Pass the reviewed commit " +
+                    "hash so every agent in a workflow sees the same " +
+                    "pinned tree even if the operator keeps committing.",
+                }),
+              }),
+            ],
+            {
+              description:
+                "Run in a throwaway git worktree of the session repo, " +
+                "deleted when the task finishes. Use when the agent must " +
+                "see the source while you keep editing the branch (e.g. " +
+                "code reviews).",
+            },
+          ),
+        ),
       }),
       {
         minItems: 1,
@@ -100,12 +127,21 @@ export function delegateTool(cwd: string = process.cwd()) {
       "keeps your own context small.",
     parameters,
     async execute(_toolCallId, args, signal, _onUpdate, ctx) {
-      // Hardcoded for v1: session cwd, no worktree, no env, no overrides.
+      // Hardcoded for v1: session cwd, no env, no per-run overrides. A
+      // worktree task pins the child to a fresh ephemeral checkout (cue-agent
+      // sets the child cwd there); boolean true means HEAD at spawn time,
+      // { base } pins to an explicit revision so all agents in a workflow
+      // see the same tree even if the operator keeps committing.
+      const toWorktree = (w: true | { base: string }) =>
+        w === true
+          ? { base: "HEAD", ephemeral: true }
+          : { base: w.base, ephemeral: true }
       const spec = {
         tasks: args.tasks.map((t) => ({
           agent: t.agent,
           prompt: t.prompt,
           cwd: ctx.cwd,
+          ...(t.worktree ? { worktree: toWorktree(t.worktree) } : {}),
           ...(args.context ? { context: args.context } : {}),
         })),
       }
