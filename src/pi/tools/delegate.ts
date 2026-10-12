@@ -2,17 +2,18 @@ import type { ToolDefinition } from "@earendil-works/pi-coding-agent"
 import { execFileSync, spawn } from "node:child_process"
 import { Type } from "typebox"
 import {
-  type AgentInfo,
   type BatchReceipt,
+  type Roster,
   MAX_TASKS,
   buildDescription,
   formatReceipt,
   parseAgentList,
+  selectableAliases,
 } from "../lib/delegate-helpers"
 
 const BINARY = "cue-agent"
 
-function makeParameters(names: string[]) {
+function makeParameters(names: string[], aliases: string[]) {
   return Type.Object({
     tasks: Type.Array(
       Type.Object({
@@ -26,6 +27,16 @@ function makeParameters(names: string[]) {
             "Self-contained instructions. The agent cannot see this " +
             "conversation; include the goal, paths, facts, and what to return.",
         }),
+        model: Type.Optional(
+          Type.Unsafe<string>({
+            type: "string",
+            enum: aliases,
+            description:
+              "Model alias for this task; must be in the agent's allowlist " +
+              "shown in the tool description. Omit to use the agent's " +
+              "default (marked *).",
+          }),
+        ),
         worktree: Type.Optional(
           Type.Union(
             [
@@ -72,16 +83,16 @@ function makeParameters(names: string[]) {
 }
 
 /** Read the merged agent roster once, at extension load. */
-function loadAgents(cwd: string): { agents: AgentInfo[]; error?: string } {
+function loadRoster(cwd: string): { roster: Roster; error?: string } {
   try {
     const stdout = execFileSync(BINARY, ["agents", "list", "--json"], {
       cwd,
       encoding: "utf8",
       stdio: ["ignore", "pipe", "pipe"],
     })
-    return { agents: parseAgentList(stdout) }
+    return { roster: parseAgentList(stdout) }
   } catch (err) {
-    return { agents: [], error: (err as Error).message }
+    return { roster: { agents: [], models: {} }, error: (err as Error).message }
   }
 }
 
@@ -112,10 +123,10 @@ function runBatch(
 }
 
 export function delegateTool(cwd: string = process.cwd()) {
-  const { agents, error } = loadAgents(cwd)
-  const names = agents.map((a) => a.name)
-  const parameters = makeParameters(names)
-  let description = buildDescription(agents)
+  const { roster, error } = loadRoster(cwd)
+  const names = roster.agents.map((a) => a.name)
+  const parameters = makeParameters(names, selectableAliases(roster))
+  let description = buildDescription(roster)
   if (error) description += `\n\n(cue-agent unavailable at load: ${error})`
 
   const tool: ToolDefinition<typeof parameters> = {
@@ -127,7 +138,8 @@ export function delegateTool(cwd: string = process.cwd()) {
       "keeps your own context small.",
     parameters,
     async execute(_toolCallId, args, signal, _onUpdate, ctx) {
-      // Hardcoded for v1: session cwd, no env, no per-run overrides. A
+      // Hardcoded for v1: session cwd, no env; model is the only per-run
+      // override (cue-agent checks it against the agent allowlist). A
       // worktree task pins the child to a fresh ephemeral checkout (cue-agent
       // sets the child cwd there); boolean true means HEAD at spawn time,
       // { base } pins to an explicit revision so all agents in a workflow
@@ -141,6 +153,7 @@ export function delegateTool(cwd: string = process.cwd()) {
           agent: t.agent,
           prompt: t.prompt,
           cwd: ctx.cwd,
+          ...(t.model ? { model: t.model } : {}),
           ...(t.worktree ? { worktree: toWorktree(t.worktree) } : {}),
           ...(args.context ? { context: args.context } : {}),
         })),
@@ -151,13 +164,14 @@ export function delegateTool(cwd: string = process.cwd()) {
       try {
         batch = JSON.parse(stdout) as BatchReceipt
       } catch {
-        // Admission failures (unknown agent, bad context, ...) print no receipt.
+        // Admission failures (unknown agent, disallowed model, bad context,
+        // ...) print no receipt; cue-agent's message names the fix.
         throw new Error(
           `cue-agent run failed (exit ${code}): ${stderr.trim() || stdout.trim()}`,
         )
       }
       return {
-        content: [{ type: "text", text: formatReceipt(batch) }],
+        content: [{ type: "text", text: formatReceipt(batch, roster) }],
         details: batch,
       }
     },

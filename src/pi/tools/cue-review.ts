@@ -27,7 +27,7 @@ const parameters = Type.Object({
   }),
   filename: Type.String({
     description:
-      "Name of the file (e.g. 'reviewer-opus.json', 'review-findings.json'). " +
+      "Name of the file (e.g. '<run-id>/reviewer-opus.json', 'review-findings.json'). " +
       "Nested relative paths are allowed (e.g. 'runs/<run-id>/findings.json'); " +
       "absolute paths and '..' are not. Extensionless names get '.json'.",
   }),

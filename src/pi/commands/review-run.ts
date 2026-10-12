@@ -7,7 +7,8 @@ import { composeMessage, sendPrompt } from "./common"
  * Port of `~/.config/opencode/prompts/commands/review/run.md`, adapted for
  * pi: subagent dispatch goes through this extension's `delegate` tool
  * (agents come from the `cue-agent` roster listed in its description)
- * instead of opencode's `task` tool and named @diff-reviewer agents.
+ * instead of opencode's `task` tool and named @diff-reviewer agents;
+ * reviewers are one `reviewer` persona run on different model aliases.
  * The workflow shape (save-branch-diff -> parallel reviewers -> verify ->
  * canonical review-findings.json) is unchanged.
  */
@@ -26,15 +27,15 @@ Execute an end-to-end multi-agent code review on the active branch diff:
 ## Configuration & Agent Selection
 
 ### Defaults
-- **Default Reviewers**: two read-only agents from the \`delegate\` tool's roster (prefer the strongest general-purpose reviewer twice-distinct, e.g. two different models)
-- **Default Verifier**: the \`consultant\` agent
+- **Default Reviewers**: two tasks on the \`reviewer\` agent, each with a \`model\` alias from its allowlist (see the \`delegate\` tool description). Pick its default model (marked \`*\`) plus the next allowed alias whose provider differs, so the two reviews come from distinct providers.
+- **Default Verifier**: the \`consultant\` agent on its default model
 
 ### Argument Resolution
 Inspect the arguments block in the user message. If non-empty, parse any agent overrides:
-- If reviewer names are mentioned (e.g. "use consultant and explore", or "--reviewers a,b"), map them to agents in the \`delegate\` tool's roster.
-- If a verifier is mentioned (e.g. "--verifier explore", "verify with explore"), map it to the corresponding roster agent.
+- Reviewer models (e.g. "review with opus and glm", "--reviewers sol,flash"): one \`reviewer\` task per named alias. Two tasks on the same alias are allowed if explicitly asked.
+- Verifier (e.g. "--verifier sol", "verify with glm"): a model alias for the \`consultant\` agent.
 - Otherwise, use the defaults above.
-- If a named agent is not in the roster, say so and fall back to the defaults.
+- If a named alias is not in the relevant agent's allowlist, say so and fall back to the defaults. Never substitute silently.
 
 ---
 
@@ -52,7 +53,7 @@ Execute the \`save-branch-diff\` tool, passing the active cue context slug as \`
 ### 2. Dispatch Parallel Reviewers
 Dispatch the review in parallel to the two selected reviewer agents using the \`delegate\` tool with a single call (two tasks in one batch, each with \`worktree: { base: COMMIT }\` so the reviewers read a pinned checkout of the reviewed commit instead of the live tree the operator may be editing).
 
-Pass the following prompt to each reviewer (replacing \`DIFF_PATH\` with the actual file path, \`RUN_ID\` with the run id derived in step 1, \`REVIEWER_SLUG\` with the reviewer's roster name, and \`CONTEXT_SLUG\` with the active cue context):
+Pass the following prompt to each reviewer (replacing \`DIFF_PATH\` with the actual file path, \`RUN_ID\` with the run id derived in step 1, \`REVIEWER_SLUG\` with the task's model alias (e.g. \`opus\`), and \`CONTEXT_SLUG\` with the active cue context):
 
 \`\`\`
 Review the git diff changes saved at: DIFF_PATH
@@ -71,7 +72,7 @@ Adhere strictly to your system prompt:
 ### 3. Parse and Aggregate Findings
 When both reviewers return:
 1. Use the \`read\` tool to read the JSON findings from the review artifact paths reported by each reviewer.
-2. Confirm both reported paths live under \`review/<RUN_ID>/\`; a reviewer reporting any other name (e.g. a suffixed \`reviewer-opus-2.json\`) deviated from the layout.
+2. Confirm both reported paths live under \`review/<RUN_ID>/\`; a reviewer reporting any other name (e.g. a suffixed \`reviewer-opus-2.json\`). If both reviewers share an alias, give the second \`REVIEWER_SLUG\` a \`-2\` suffix in its prompt up front deviated from the layout.
 3. Verify proof-of-work: ensure \`proof_of_work\` (falsifiable questions, files examined, categories swept) is populated.
 4. Check for reviewer divergence: if there is a severe disparity (e.g. 0 findings vs >3 findings on a substantial diff), note the disparity.
 5. Deduplicate or cluster findings across reviewers that identify the same defect in the same code location.
@@ -103,8 +104,8 @@ The canonical \`review-findings.json\` artifact format:
     "branch": "<branch-name>",
     "base_branch": "<base-branch>",
     "reviewed_diff": "<diff-path>",
-    "reviewers": ["<reviewer-agent-name>", "..."],
-    "verifier": "<verifier-agent-name>"
+    "reviewers": ["reviewer@<alias>", "..."],
+    "verifier": "consultant@<alias>"
   },
   "summary": {
     "total_candidates": 7,
@@ -121,7 +122,7 @@ The canonical \`review-findings.json\` artifact format:
   "findings": [
     {
       "id": "finding-1",
-      "models": ["<reviewer-agent-name>"],
+      "models": ["<reviewer-model-alias>"],
       "title": "Short descriptive summary",
       "category": "Correctness | Efficiency | Maintainability | Security | Testing & Observability",
       "severity": "critical | high | medium | low",
@@ -135,7 +136,7 @@ The canonical \`review-findings.json\` artifact format:
       "suggested_fix": "Ready-to-apply code snippet or patch",
       "verification": {
         "verdict": "verified",
-        "verifier": "<verifier-agent-name>",
+        "verifier": "consultant@<alias>",
         "reasoning": "Explanation of verification findings against callers and state."
       },
       "dismiss_reason": null

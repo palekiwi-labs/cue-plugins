@@ -1,23 +1,40 @@
 import { describe, expect, test } from "bun:test"
-import { buildDescription, formatReceipt, parseAgentList } from "./delegate-helpers"
+import { buildDescription, formatReceipt, parseAgentList, selectableAliases } from "./delegate-helpers"
+
+const listing = JSON.stringify({
+  models: {
+    opus: { id: "anthropic/claude-opus", thinking: "medium", provider: "anthropic" },
+    flash: { id: "google/flash", provider: "google" },
+    unused: { id: "x/unused" },
+  },
+  agents: [
+    { name: "reviewer", description: "reviews", models: ["opus", "flash"], model: "anthropic/claude-opus" },
+    { name: "plain", description: null, models: [] },
+  ],
+})
 
 describe("parseAgentList", () => {
-  test("extracts name, description and model", () => {
-    const out = JSON.stringify({
-      agents: [{ name: "explore", description: "d", model: "m", tools: [] }],
-    })
-    expect(parseAgentList(out)).toEqual([{ name: "explore", description: "d", model: "m" }])
+  test("extracts agents with allowlists and the alias registry", () => {
+    const r = parseAgentList(listing)
+    expect(r.agents[0]).toEqual({ name: "reviewer", description: "reviews", models: ["opus", "flash"] })
+    expect(r.models.flash).toEqual({ id: "google/flash", thinking: null, provider: "google" })
   })
 
   test("rejects output without an agents array", () => {
     expect(() => parseAgentList("{}")).toThrow()
   })
+
+  test("selectable aliases are those some agent allows", () => {
+    expect(selectableAliases(parseAgentList(listing))).toEqual(["opus", "flash"])
+  })
 })
 
 describe("buildDescription", () => {
-  test("lists agents with their models", () => {
-    const d = buildDescription([{ name: "consultant", description: "second opinion", model: "anthropic/opus" }])
-    expect(d).toContain("- consultant (anthropic/opus): second opinion")
+  test("marks the default model and lists the registry", () => {
+    const d = buildDescription(parseAgentList(listing))
+    expect(d).toContain("- reviewer [opus*, flash]: reviews")
+    expect(d).toContain("- plain [harness default; no model override]")
+    expect(d).toContain("- opus: anthropic/claude-opus (anthropic, thinking medium)")
     expect(d).toContain("does NOT see this conversation")
   })
 })
@@ -40,6 +57,17 @@ describe("formatReceipt", () => {
       runs: [{ ...base, agent: "explore", outcome: "completed", response: "found it", error: null }],
     })
     expect(text).toBe("## explore - completed (6 turns, 41s, $0.0040)\n\nfound it")
+  })
+
+  test("header names the resolved model alias", () => {
+    const text = formatReceipt(
+      {
+        batch_id: "b",
+        runs: [{ ...base, model: "google/flash", agent: "reviewer", outcome: "completed", response: "ok", error: null }],
+      },
+      parseAgentList(listing),
+    )
+    expect(text.startsWith("## reviewer@flash - completed")).toBe(true)
   })
 
   test("failed run shows error and stderr", () => {
