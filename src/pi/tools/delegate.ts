@@ -1,5 +1,6 @@
 import type { ToolDefinition } from "@earendil-works/pi-coding-agent"
 import { execFileSync, spawn } from "node:child_process"
+import { resolve } from "node:path"
 import { Type } from "typebox"
 import {
   type BatchReceipt,
@@ -35,6 +36,15 @@ function makeParameters(names: string[], aliases: string[]) {
               "Model alias for this task; must be in the agent's allowlist " +
               "shown in the tool description. Omit to use the agent's " +
               "default (marked *).",
+          }),
+        ),
+        dir: Type.Optional(
+          Type.String({
+            description:
+              "Directory the agent runs in (child pi loads that repo's " +
+              "AGENTS.md and project files). Absolute, or relative to the " +
+              "session directory (git -C convention). Omit for the session " +
+              "cwd; ignored when worktree is set.",
           }),
         ),
         worktree: Type.Optional(
@@ -138,12 +148,13 @@ export function delegateTool(cwd: string = process.cwd()) {
       "keeps your own context small.",
     parameters,
     async execute(_toolCallId, args, signal, _onUpdate, ctx) {
-      // Hardcoded for v1: session cwd, no env; model is the only per-run
-      // override (cue-agent checks it against the agent allowlist). A
-      // worktree task pins the child to a fresh ephemeral checkout (cue-agent
-      // sets the child cwd there); boolean true means HEAD at spawn time,
-      // { base } pins to an explicit revision so all agents in a workflow
-      // see the same tree even if the operator keeps committing.
+      // Per-task overrides: model (cue-agent checks it against the agent
+      // allowlist), dir (child cwd, so the child pi loads the target repo's
+      // AGENTS.md), and worktree (pins the child to a fresh ephemeral
+      // checkout; cue-agent sets the child cwd there, so dir is dropped).
+      // Boolean true means HEAD at spawn time; { base } pins to an explicit
+      // revision so all agents in a workflow see the same tree even if the
+      // operator keeps committing.
       const toWorktree = (w: true | { base: string }) =>
         w === true
           ? { base: "HEAD", ephemeral: true }
@@ -152,7 +163,9 @@ export function delegateTool(cwd: string = process.cwd()) {
         tasks: args.tasks.map((t) => ({
           agent: t.agent,
           prompt: t.prompt,
-          cwd: ctx.cwd,
+          ...(t.worktree
+            ? { worktree: toWorktree(t.worktree) }
+            : { cwd: t.dir ? resolve(ctx.cwd, t.dir) : ctx.cwd }),
           ...(t.model ? { model: t.model } : {}),
           ...(t.worktree ? { worktree: toWorktree(t.worktree) } : {}),
           ...(args.context ? { context: args.context } : {}),
