@@ -1,5 +1,6 @@
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent"
 import { registerAcuityListener } from "./acuity"
+import { registerContextInjectCommand } from "./commands/context-inject"
 import { registerContextPinsCommand } from "./commands/context-pins"
 import { registerIdeaCommand } from "./commands/idea"
 import { registerReviewRunCommand } from "./commands/review-run"
@@ -38,6 +39,7 @@ export default function cuePlugins(pi: ExtensionAPI): void {
   pi.registerTool(saveBranchDiffTool(pi))
   pi.registerTool(delegateTool())
 
+  registerContextInjectCommand(pi)
   registerContextPinsCommand(pi)
   registerIdeaCommand(pi)
   registerReviewRunCommand(pi)

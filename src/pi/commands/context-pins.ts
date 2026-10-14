@@ -19,17 +19,19 @@ import { composeMessage, cueBestEffort } from "./common"
 /**
  * Gather the orientation block for a context: pwd, git, status, direct
  * children, log and master plan. Data only; no instructions, so the
- * operator's next prompt decides what to do with it.
+ * operator's next prompt decides what to do with it. Queries pass the
+ * full canonical address, so contexts outside the cwd's scope resolve.
  */
 export async function contextOrientation(
   pi: ExtensionAPI,
   cwd: string,
-  slug: string,
+  address: string,
 ): Promise<string> {
+  const slug = slugOf(address)
   const git = formatGitContext(await gitContext(pi, cwd))
-  const ctxArgs = ["--context", slug]
+  const ctxArgs = ["--context", address]
   const status = await cueBestEffort(pi, cwd, ["status", ...ctxArgs])
-  const children = await contextChildren(pi, cwd, slug)
+  const children = await contextChildren(pi, cwd, address)
   const log = await cueBestEffort(pi, cwd, [
     "log",
     "list",
@@ -67,7 +69,7 @@ export async function injectContext(
   const details: CueContextDetails = { address }
   pi.sendMessage({
     customType: CUE_CONTEXT_TYPE,
-    content: await contextOrientation(pi, cwd, slugOf(address)),
+    content: await contextOrientation(pi, cwd, address),
     display: true,
     details,
   })
