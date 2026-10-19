@@ -63,7 +63,11 @@ Commands: `/cue:context:pins` (pick a pinned context and inject its
 orientation into the session without starting a turn; the session and
 tmux window are named after its slug), `/cue:context:inject <address>`
 (the same for any context by canonical address, pinned or not, from any
-scope; tab-completes store addresses), `/cue:idea`, plus the pi-only
+scope; tab-completes store addresses), `/cue:context:current` (the
+same for the session's active context, no picker: the context linked or
+injected in this session, else cue's own resolution via `$CUE_CONTEXT`
+or the branch config; follow with `/cue:init` for a summary),
+`/cue:idea`, plus the pi-only
 `/review:run` automated multi-agent branch-diff review workflow (delegates
 reviewers and verifier to `cue-agent` agents via the `delegate` tool).
 
