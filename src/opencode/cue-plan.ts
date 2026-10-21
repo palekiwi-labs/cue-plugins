@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto"
 import { type Plugin, tool } from "@opencode-ai/plugin"
 import { join } from "node:path"
 import { tmpdir } from "node:os"
@@ -37,7 +38,7 @@ const cuePlanTool = tool({
     ),
   },
   async execute(args, context) {
-    const tempPath = join(tmpdir(), `cue-plan-${Date.now()}.md`)
+    const tempPath = join(tmpdir(), `cue-plan-${randomUUID()}.md`)
     try {
       await Bun.write(tempPath, args.content)
 

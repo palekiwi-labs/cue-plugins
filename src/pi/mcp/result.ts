@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto"
 import {
   DEFAULT_MAX_BYTES,
   DEFAULT_MAX_LINES,
@@ -70,7 +71,7 @@ function textOf(content: Content[]): string {
 }
 
 export async function saveFullOutputToTemp(tool: string, text: string): Promise<string> {
-  const path = join(tmpdir(), `pi-mcp-cast-${tool}-${Date.now()}.txt`)
+  const path = join(tmpdir(), `pi-mcp-cast-${tool}-${randomUUID()}.txt`)
   await writeFile(path, text)
   return path
 }

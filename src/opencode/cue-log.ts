@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto"
 import { type Plugin, tool } from "@opencode-ai/plugin"
 import { join } from "node:path"
 import { tmpdir } from "node:os"
@@ -66,7 +67,7 @@ export const CueLogPlugin: Plugin = async (input) => {
           ),
         },
         async execute(args, context) {
-          const tempPath = join(tmpdir(), `cue-log-${Date.now()}.json`)
+          const tempPath = join(tmpdir(), `cue-log-${randomUUID()}.json`)
 
           // Create the JSON payload for the cue CLI. Absent fields are
           // dropped by JSON.stringify rather than serialised as null, which

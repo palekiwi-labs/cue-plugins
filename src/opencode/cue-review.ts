@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto"
 import { type Plugin, tool } from "@opencode-ai/plugin"
 import { join } from "node:path"
 import { tmpdir } from "node:os"
@@ -79,7 +80,7 @@ const cueReviewTool = tool({
       )
     }
 
-    const tempPath = join(tmpdir(), `cue-review-${Date.now()}.json`)
+    const tempPath = join(tmpdir(), `cue-review-${randomUUID()}.json`)
     try {
       await Bun.write(tempPath, args.content)
 

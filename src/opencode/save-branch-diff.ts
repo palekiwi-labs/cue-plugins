@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto"
 import { type Plugin, tool } from "@opencode-ai/plugin"
 import { isAbsolute, join, resolve } from "node:path"
 import { homedir, tmpdir } from "node:os"
@@ -117,7 +118,7 @@ const saveBranchDiffTool = tool({
     //    so captures separate across commits by the hash component and
     //    reruns at one commit accumulate rather than overwrite.
     const filename = diffFilename(branch)
-    const tempPath = join(tmpdir(), `branch-diff-${Date.now()}.diff`)
+    const tempPath = join(tmpdir(), `branch-diff-${randomUUID()}.diff`)
     try {
       await Bun.write(tempPath, diffContent)
 

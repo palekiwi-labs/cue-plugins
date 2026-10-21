@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { unlink, writeFile } from "node:fs/promises"
@@ -15,7 +16,7 @@ export async function withTempFile<T>(
   ext: string,
   fn: (path: string) => Promise<T>,
 ): Promise<T> {
-  const path = join(tmpdir(), `${prefix}-${Date.now()}.${ext}`)
+  const path = join(tmpdir(), `${prefix}-${randomUUID()}.${ext}`)
   await writeFile(path, content)
   try {
     return await fn(path)
