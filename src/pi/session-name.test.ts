@@ -1,7 +1,10 @@
 import { describe, expect, test } from "bun:test"
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent"
 import { CUE_CONTEXT_TYPE } from "./lib/current-context"
-import { applyContextName, registerSessionNaming } from "./session-name"
+import { applyContextName, latestFileSessionName, registerSessionNaming } from "./session-name"
+import { mkdtemp, writeFile } from "node:fs/promises"
+import { tmpdir } from "node:os"
+import { join } from "node:path"
 
 function makePi() {
   const names: string[] = []
@@ -50,9 +53,34 @@ describe("applyContextName", () => {
   })
 })
 
+describe("latestFileSessionName", () => {
+  test("returns the last session_info entry in file order", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "cue-pi-"))
+    const file = join(dir, "session.jsonl")
+    await writeFile(
+      file,
+      [
+        JSON.stringify({ type: "message", id: "1" }),
+        JSON.stringify({ type: "session_info", id: "2", name: "old" }),
+        JSON.stringify({ type: "message", id: "3" }),
+        JSON.stringify({ type: "session_info", id: "4", name: "new" }),
+        "",
+      ].join("\n"),
+    )
+    expect(await latestFileSessionName(file)).toBe("new")
+  })
+
+  test("missing file yields undefined", async () => {
+    expect(await latestFileSessionName("/nonexistent/x.jsonl")).toBeUndefined()
+  })
+})
+
 describe("registerSessionNaming", () => {
   const ctx = (branch: unknown[]) => ({
-    sessionManager: { getBranch: () => branch },
+    sessionManager: {
+      getBranch: () => branch,
+      getSessionFile: () => undefined,
+    },
   })
 
   test("session_start and session_tree name after the current context", async () => {

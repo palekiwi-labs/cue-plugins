@@ -1,4 +1,6 @@
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent"
+import { watchFile, unwatchFile } from "node:fs"
+import { readFile } from "node:fs/promises"
 import { currentContext, slugOf } from "./lib/current-context"
 
 /**
@@ -63,9 +65,72 @@ export function registerSessionNaming(
         env,
       )
   }
-  pi.on("session_start", async (_e, ctx) => sync(ctx))
+  pi.on("session_start", async (_e, ctx) => {
+    watchSessionFile(pi, ctx, env)
+    await sync(ctx)
+  })
   pi.on("session_tree", async (_e, ctx) => sync(ctx))
   pi.on("session_info_changed", async (e) =>
     renameTmuxWindow(pi, e.name || DEFAULT_WINDOW_NAME, env),
   )
+}
+
+/**
+ * Latest session display name recorded in the session file, from the
+ * last "session_info" entry in file order.
+ */
+export async function latestFileSessionName(
+  file: string,
+): Promise<string | undefined> {
+  let text: string
+  try {
+    text = await readFile(file, "utf8")
+  } catch {
+    return undefined
+  }
+  let name: string | undefined
+  for (const line of text.split("\n")) {
+    if (!line) continue
+    try {
+      const entry = JSON.parse(line)
+      if (entry?.type === "session_info" && entry.name)
+        name = String(entry.name)
+    } catch {
+      // tolerate trailing partial lines from concurrent appends
+    }
+  }
+  return name
+}
+
+/**
+ * Renaming from the session tree (C-r) writes a session_info entry
+ * straight to the session file through a separate SessionManager, with
+ * no session_info_changed event. Watch the file so the tmux window
+ * follows those renames too. Only the tmux window is touched: the
+ * running session's in-memory name stays as-is (pi keeps them in sync
+ * only on reload).
+ */
+export function watchSessionFile(
+  pi: ExtensionAPI,
+  ctx: { sessionManager: { getSessionFile(): string | undefined } },
+  env: NodeJS.ProcessEnv,
+): void {
+  const file = ctx.sessionManager.getSessionFile()
+  if (!file) return
+  unwatchFile(file)
+  void latestFileSessionName(file).then((initial) => {
+    let last = initial
+    watchFile(
+      file,
+      { interval: 2000 },
+      (_cur, _prev) => {
+        void latestFileSessionName(file).then((name) => {
+          if (name !== undefined && name !== last) {
+            last = name
+            void renameTmuxWindow(pi, name, env)
+          }
+        })
+      },
+    )
+  })
 }
