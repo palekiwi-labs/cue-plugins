@@ -63,7 +63,9 @@ review artifacts.
    already running for the same context; `--context` overrides the
    automatic name (single target only).
 
-   Default manifest `~/.config/cast/nix/cue-review/review-run.json`
+   Manifests are selected by name: `--manifest <name>` reads
+   `~/.config/cue/review/<name>.json` (global only; project-specific
+   ones are name-prefixed, e.g. `spabreaks-...`). Default `review-run`
    (reviewers opus+sol, merger sol, verifier opus; ~$0.5, minutes/PR).
 3. **Collect**: `cue-review status` lists windows with
    `@review_state` (running/ok/failed/pending). When `ok`, read:

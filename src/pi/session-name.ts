@@ -70,6 +70,7 @@ export function registerSessionNaming(
     await sync(ctx)
   })
   pi.on("session_tree", async (_e, ctx) => sync(ctx))
+  pi.on("session_shutdown", () => stopWatchSessionFile())
   pi.on("session_info_changed", async (e) =>
     renameTmuxWindow(pi, e.name || DEFAULT_WINDOW_NAME, env),
   )
@@ -102,35 +103,43 @@ export async function latestFileSessionName(
   return name
 }
 
+/** Session file currently watched by watchSessionFile (module-level so
+ * session switches can replace/clear it). */
+let watchedFile: string | undefined
+
 /**
  * Renaming from the session tree (C-r) writes a session_info entry
  * straight to the session file through a separate SessionManager, with
- * no session_info_changed event. Watch the file so the tmux window
- * follows those renames too. Only the tmux window is touched: the
- * running session's in-memory name stays as-is (pi keeps them in sync
- * only on reload).
+ * no session_info_changed event. Poll the file (watchFile: robust to
+ * inode changes) so the tmux window follows those renames too. Only
+ * the tmux window is touched: the running session's in-memory name
+ * stays as-is (pi keeps them in sync only on reload).
  */
 export function watchSessionFile(
   pi: ExtensionAPI,
   ctx: { sessionManager: { getSessionFile(): string | undefined } },
   env: NodeJS.ProcessEnv,
 ): void {
+  stopWatchSessionFile()
   const file = ctx.sessionManager.getSessionFile()
   if (!file) return
-  unwatchFile(file)
-  void latestFileSessionName(file).then((initial) => {
-    let last = initial
-    watchFile(
-      file,
-      { interval: 2000 },
-      (_cur, _prev) => {
-        void latestFileSessionName(file).then((name) => {
-          if (name !== undefined && name !== last) {
-            last = name
-            void renameTmuxWindow(pi, name, env)
-          }
-        })
-      },
-    )
+  watchedFile = file
+  const onChange = async (): Promise<void> => {
+    const name = await latestFileSessionName(file)
+    if (name !== undefined && name !== last) {
+      last = name
+      void renameTmuxWindow(pi, name, env)
+    }
+  }
+  let last: string | undefined
+  void onChange().then(() => {
+    if (watchedFile !== file) return // superseded while reading
+    watchFile(file, { interval: 2000 }, () => void onChange())
   })
+}
+
+/** Stop watching, e.g. on session shutdown or when switching files. */
+export function stopWatchSessionFile(): void {
+  if (watchedFile) unwatchFile(watchedFile)
+  watchedFile = undefined
 }
