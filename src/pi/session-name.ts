@@ -42,6 +42,10 @@ export async function renameTmuxWindow(
  * window follows the session: its own name if it has one (e.g. /name),
  * else "pi" -- so switching to a new session does not keep the
  * previous session's window name.
+ *
+ * An explicit session rename (/name, RPC) is the user's intent and
+ * always wins: the tmux window follows the new session name even when
+ * a cue context had named it before.
  */
 export function registerSessionNaming(
   pi: ExtensionAPI,
@@ -61,4 +65,7 @@ export function registerSessionNaming(
   }
   pi.on("session_start", async (_e, ctx) => sync(ctx))
   pi.on("session_tree", async (_e, ctx) => sync(ctx))
+  pi.on("session_info_changed", async (e) =>
+    renameTmuxWindow(pi, e.name || DEFAULT_WINDOW_NAME, env),
+  )
 }

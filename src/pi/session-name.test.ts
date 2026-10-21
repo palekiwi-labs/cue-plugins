@@ -78,6 +78,17 @@ describe("registerSessionNaming", () => {
     ])
   })
 
+  test("session rename propagates to the tmux window", async () => {
+    const m = makePi()
+    registerSessionNaming(m.pi, { TMUX: "x", TMUX_PANE: "%2" })
+    await m.handlers.session_info_changed!({ name: "my-session" }, ctx([]))
+    await m.handlers.session_info_changed!({}, ctx([]))
+    expect(m.execs).toEqual([
+      { cmd: "tmux", args: ["rename-window", "-t", "%2", "my-session"] },
+      { cmd: "tmux", args: ["rename-window", "-t", "%2", "pi"] },
+    ])
+  })
+
   test("no current context: window follows the session's own name", async () => {
     const m = makePi()
     ;(m.pi as any).setName("mine")
