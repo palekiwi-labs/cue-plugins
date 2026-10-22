@@ -6,6 +6,18 @@ import { mkdtemp, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 
+/** Tests run with piped stdio; force the tty-owns-pane guard on. */
+function withTTY<T>(fn: () => Promise<T>): Promise<T> {
+  const stdout = process.stdout as { isTTY?: boolean }
+  const had = "isTTY" in stdout
+  const prev = stdout.isTTY
+  Object.defineProperty(stdout, "isTTY", { value: true, configurable: true })
+  return fn().finally(() => {
+    if (had) Object.defineProperty(stdout, "isTTY", { value: prev, configurable: true })
+    else delete stdout.isTTY
+  })
+}
+
 function makePi() {
   const names: string[] = []
   const execs: { cmd: string; args: string[] }[] = []
@@ -37,10 +49,19 @@ describe("applyContextName", () => {
 
   test("inside tmux renames this pane's window", async () => {
     const m = makePi()
-    await applyContextName(m.pi, "a/b/slug", { TMUX: "x", TMUX_PANE: "%3" })
+    await withTTY(() =>
+      applyContextName(m.pi, "a/b/slug", { TMUX: "x", TMUX_PANE: "%3" }),
+    )
     expect(m.execs).toEqual([
       { cmd: "tmux", args: ["rename-window", "-t", "%3", "slug"] },
     ])
+  })
+
+  test("non-tty child pi (subagent) never renames the window", async () => {
+    const m = makePi()
+    await applyContextName(m.pi, "a/b/slug", { TMUX: "x", TMUX_PANE: "%3" })
+    expect(m.execs).toEqual([])
+    expect(m.names).toEqual(["slug"])
   })
 
   test("tmux failure is swallowed", async () => {
@@ -99,7 +120,7 @@ describe("registerSessionNaming", () => {
   test("no current context: session name untouched, window reset to pi", async () => {
     const m = makePi()
     registerSessionNaming(m.pi, { TMUX: "x", TMUX_PANE: "%1" })
-    await m.handlers.session_start!({}, ctx([{ type: "message" }]))
+    await withTTY(() => m.handlers.session_start!({}, ctx([{ type: "message" }])))
     expect(m.names).toEqual([])
     expect(m.execs).toEqual([
       { cmd: "tmux", args: ["rename-window", "-t", "%1", "pi"] },
@@ -109,8 +130,10 @@ describe("registerSessionNaming", () => {
   test("session rename propagates to the tmux window", async () => {
     const m = makePi()
     registerSessionNaming(m.pi, { TMUX: "x", TMUX_PANE: "%2" })
-    await m.handlers.session_info_changed!({ name: "my-session" }, ctx([]))
-    await m.handlers.session_info_changed!({}, ctx([]))
+    await withTTY(async () => {
+      await m.handlers.session_info_changed!({ name: "my-session" }, ctx([]))
+      await m.handlers.session_info_changed!({}, ctx([]))
+    })
     expect(m.execs).toEqual([
       { cmd: "tmux", args: ["rename-window", "-t", "%2", "my-session"] },
       { cmd: "tmux", args: ["rename-window", "-t", "%2", "pi"] },
@@ -121,7 +144,7 @@ describe("registerSessionNaming", () => {
     const m = makePi()
     ;(m.pi as any).setName("mine")
     registerSessionNaming(m.pi, { TMUX: "x" })
-    await m.handlers.session_start!({}, ctx([]))
+    await withTTY(() => m.handlers.session_start!({}, ctx([])))
     expect(m.execs).toEqual([
       { cmd: "tmux", args: ["rename-window", "mine"] },
     ])

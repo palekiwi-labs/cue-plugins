@@ -1,5 +1,5 @@
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent"
-import { watchFile, unwatchFile } from "node:fs"
+import { appendFileSync, watchFile, unwatchFile } from "node:fs"
 import { readFile } from "node:fs/promises"
 import { currentContext, slugOf } from "./lib/current-context"
 
@@ -22,13 +22,37 @@ export async function applyContextName(
 /** Window name for a session with no cue context and no name of its own. */
 export const DEFAULT_WINDOW_NAME = "pi"
 
-/** Rename the tmux window holding this pane; no-op outside tmux. */
+/** TEMP debug: log every rename decision to find the "pi" reverts. */
+function debugLog(reason: string, name: string): void {
+  try {
+    appendFileSync(
+      "/tmp/pi-name-debug/renames.log",
+      `${new Date().toISOString()} reason=${reason} name=${name} pid=${process.pid}\n`,
+    )
+  } catch {
+    /* debug only */
+  }
+}
+
+/**
+ * Rename the tmux window holding this pane; no-op outside tmux.
+ *
+ * Only an interactive pi that owns the pane's tty may rename: child
+ * pi processes (subagents, `pi -p`, scripted helpers) inherit
+ * TMUX_PANE and would otherwise clobber the parent window's name.
+ */
 export async function renameTmuxWindow(
   pi: ExtensionAPI,
   name: string,
   env: NodeJS.ProcessEnv = process.env,
+  reason = "applyContextName",
 ): Promise<void> {
   if (!env.TMUX) return
+  if (!process.stdout.isTTY) {
+    debugLog(`skipped-non-tty reason=${reason}`, name)
+    return
+  }
+  debugLog(reason, name)
   const target = env.TMUX_PANE ? ["-t", env.TMUX_PANE] : []
   try {
     await pi.exec("tmux", ["rename-window", ...target, name])
@@ -58,12 +82,18 @@ export function registerSessionNaming(
   }) => {
     const address = currentContext(ctx.sessionManager.getBranch())
     if (address) await applyContextName(pi, address, env)
-    else
+    else {
+      debugLog(
+        `sync/else event session-name=${pi.getSessionName() ?? "undefined"}`,
+        pi.getSessionName() || DEFAULT_WINDOW_NAME,
+      )
       await renameTmuxWindow(
         pi,
         pi.getSessionName() || DEFAULT_WINDOW_NAME,
         env,
+        "sync/else",
       )
+    }
   }
   pi.on("session_start", async (_e, ctx) => {
     watchSessionFile(pi, ctx, env)
@@ -72,7 +102,12 @@ export function registerSessionNaming(
   pi.on("session_tree", async (_e, ctx) => sync(ctx))
   pi.on("session_shutdown", () => stopWatchSessionFile())
   pi.on("session_info_changed", async (e) =>
-    renameTmuxWindow(pi, e.name || DEFAULT_WINDOW_NAME, env),
+    renameTmuxWindow(
+      pi,
+      e.name || DEFAULT_WINDOW_NAME,
+      env,
+      `session_info_changed name=${e.name ?? "undefined"}`,
+    ),
   )
 }
 
@@ -128,7 +163,7 @@ export function watchSessionFile(
     const name = await latestFileSessionName(file)
     if (name !== undefined && name !== last) {
       last = name
-      void renameTmuxWindow(pi, name, env)
+      void renameTmuxWindow(pi, name, env, "file-watch")
     }
   }
   let last: string | undefined
