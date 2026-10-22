@@ -131,7 +131,7 @@ async function handler(
     ctx.ui.notify("cue: no pinned contexts in this scope", "info")
     return
   }
-  const choice = await fuzzySelect(ctx.ui, "", pinItems(entries), {
+  const choice = await fuzzySelect(ctx.ui, "Cue context", pinItems(entries), {
     submitHint: "inject",
     altHint: "link only",
   })

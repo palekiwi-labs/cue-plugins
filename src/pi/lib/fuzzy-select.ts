@@ -125,7 +125,7 @@ export async function fuzzySelect(
     const container = new Container()
     const border = () => new DynamicBorder((s: string) => theme.fg("accent", s))
     container.addChild(border())
-    if (title) container.addChild(new Text(theme.fg("accent", theme.bold(title))))
+    container.addChild(new Text(theme.fg("accent", theme.bold(title))))
     container.addChild(input)
     container.addChild(holder)
     container.addChild(
