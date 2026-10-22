@@ -109,6 +109,7 @@ export function pinItems(entries: readonly TreeEntry[]): PickItem[] {
     value: e.address,
     text: mixed ? `${e.slug} ${e.address}` : e.slug,
     label: treePrefix(e) + e.slug,
+    flat: e.slug,
     ...(mixed ? { right: e.address.slice(0, e.address.length - e.slug.length - 1) } : {}),
   }))
 }

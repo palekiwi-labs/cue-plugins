@@ -22,16 +22,17 @@ export function fuzzyNarrow(items: string[], query: string): string[] {
 
 /**
  * A picker item. `value` is what the picker resolves; `text` is what
- * the query fuzzy-matches and what a filtered list shows (default:
- * value). `label` (e.g. a tree-indented slug) is shown only while the
- * query is empty, since a filtered list breaks the structure it draws.
- * `right` is a muted meta column (e.g. the context's scope), aligned
- * across rows; shown alongside `label` when the query is empty.
+ * the query fuzzy-matches (default: value). `label` (e.g. a
+ * tree-indented slug) is shown only while the query is empty, since a
+ * filtered list breaks the structure it draws; `flat` replaces it in
+ * the filtered view (default: `text`). `right` is a muted meta column
+ * (e.g. the context's scope), aligned across rows in both views.
  */
 export interface PickItem {
   value: string
   text?: string
   label?: string
+  flat?: string
   right?: string
 }
 
@@ -96,15 +97,12 @@ export async function fuzzySelect(
       const shown = fuzzyFilter(picks, query, textOf)
       const plain = (query.trim() === "")
       const entries: SelectItem[] = shown.map((p) => {
-        let label: string
-        if (plain) {
-          const left = p.label ?? textOf(p)
-          label = p.right
-            ? left.padEnd(leftWidth + 2) + theme.fg("muted", p.right)
-            : left
-        } else {
-          label = textOf(p)
-        }
+        const left = plain
+          ? (p.label ?? textOf(p))
+          : (p.flat ?? textOf(p))
+        const label = p.right
+          ? left.padEnd(leftWidth + 2) + theme.fg("muted", p.right)
+          : left
         return { value: p.value, label }
       })
       list = new SelectList(entries, MAX_VISIBLE, listTheme)
