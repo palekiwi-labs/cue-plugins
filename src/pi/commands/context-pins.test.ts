@@ -6,25 +6,36 @@ import type {
 import {
   CUE_CONTEXT_TYPE,
   currentContext,
-  parsePinned,
   slugOf,
 } from "../lib/current-context"
+import { parseTree } from "../lib/context-tree"
 import { fuzzyNarrow } from "../lib/fuzzy-select"
 import { pinItems, registerContextPinsCommand } from "./context-pins"
 
 describe("current-context helpers", () => {
-  test("parsePinned keeps CLI order and drops malformed rows", () => {
-    const json = JSON.stringify([
-      { context: "hot", scope: "a/b", last_logged_at: 9, parent: "a/b/x" },
-      { context: 3, scope: "a/b" },
-      { context: "cold", scope: "a/b", last_logged_at: null },
+  test("parseTree walks nested roots with connectors, drops malformed", () => {
+    const json = JSON.stringify({
+      roots: [
+        {
+          context: "root",
+          scope: "a/b",
+          children: [
+            { context: "mid", scope: "a/b", children: [{ context: "leaf", scope: "a/b" }] },
+            { context: 3, scope: "a/b" },
+          ],
+        },
+        { context: "solo", scope: "c/d" },
+      ],
+      diagnostics: [],
+    })
+    expect(parseTree(json).map((e) => [e.address, e.depth, e.isLast])).toEqual([
+      ["a/b/root", 0, false],
+      ["a/b/mid", 1, false],
+      ["a/b/leaf", 2, true],
+      ["c/d/solo", 0, true],
     ])
-    expect(parsePinned(json)).toEqual([
-      { slug: "hot", address: "a/b/hot", parent: "a/b/x", lastLoggedAt: 9 },
-      { slug: "cold", address: "a/b/cold", lastLoggedAt: 0 },
-    ])
-    expect(parsePinned("")).toEqual([])
-    expect(parsePinned("not json")).toEqual([])
+    expect(parseTree("{}")).toEqual([])
+    expect(parseTree("not json")).toEqual([])
   })
 
   test("slugOf takes the last address segment", () => {
@@ -68,10 +79,14 @@ describe("current-context helpers", () => {
   })
 })
 
-const LIST_PINNED = "context list --json --pinned --sort recency"
+const LIST_PINNED =
+  "context tree --pinned --sort recency --json"
 
 const pinsJson = (...slugs: string[]) =>
-  JSON.stringify(slugs.map((context) => ({ context, scope: "a/b" })))
+  JSON.stringify({
+    roots: slugs.map((context) => ({ context, scope: "a/b" })),
+    diagnostics: [],
+  })
 
 function setup(opts: {
   pins: string
@@ -191,22 +206,20 @@ describe("fuzzyNarrow", () => {
 })
 
 describe("pinItems tree", () => {
-  const pin = (slug: string, t: number, parent?: string) => ({
-    slug,
-    address: `a/b/${slug}`,
-    lastLoggedAt: t,
-    ...(parent ? { parent: `a/b/${parent}` } : {}),
-  })
+  const entry = (
+    slug: string,
+    depth: number,
+    isLast: boolean,
+    connectors: boolean[] = [],
+  ) => ({ slug, address: `a/b/${slug}`, depth, connectors, isLast })
 
-  test("nests children under parents with connectors", () => {
-    // CLI recency order: hot child first, its parent stale.
+  test("indents with connectors", () => {
     const items = pinItems([
-      pin("leaf", 9, "mid"),
-      pin("solo", 5),
-      pin("other", 3, "root"),
-      pin("mid", 2, "root"),
-      pin("root", 1),
-      pin("orphan", 0, "unpinned"),
+      entry("root", 0, false),
+      entry("mid", 1, false),
+      entry("leaf", 2, true, [true]),
+      entry("other", 1, true),
+      entry("solo", 0, true),
     ])
     expect(items.map((i) => i.label)).toEqual([
       "root",
@@ -214,13 +227,7 @@ describe("pinItems tree", () => {
       "│ └─leaf",
       "└─other",
       "solo",
-      "orphan",
     ])
     expect(items[2]).toMatchObject({ value: "a/b/leaf", text: "leaf" })
-  })
-
-  test("survives parent cycles", () => {
-    const items = pinItems([pin("x", 1, "y"), pin("y", 2, "x")])
-    expect(items.map((i) => i.text).sort()).toEqual(["x", "y"])
   })
 })

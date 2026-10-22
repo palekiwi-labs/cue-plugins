@@ -6,12 +6,10 @@ import { contextChildren } from "../lib/context-children"
 import {
   CUE_CONTEXT_TYPE,
   type CueContextDetails,
-  parsePinned,
-  type PinnedContext,
   slugOf,
 } from "../lib/current-context"
 import { applyContextName } from "../session-name"
-import { orderTree, treePrefix } from "../lib/context-tree"
+import { parseTree, treePrefix, type TreeEntry } from "../lib/context-tree"
 import { fuzzySelect, type PickItem } from "../lib/fuzzy-select"
 import { formatGitContext, gitContext } from "../lib/git-context"
 import { composeMessage, cueBestEffort } from "./common"
@@ -92,17 +90,15 @@ export async function linkContext(
 }
 
 /**
- * Picker items for pinned contexts, ordered as a parent-child tree like
+ * Picker items for pinned contexts, as a parent-child tree like
  * cue.nvim's pins picker. Values are addresses (slugs may repeat across
  * scopes); labels are the tree-indented slugs.
  */
-export function pinItems(
-  pins: readonly PinnedContext[],
-): PickItem[] {
-  return orderTree(pins).map((e) => ({
-    value: e.row.address,
-    text: e.row.slug,
-    label: treePrefix(e) + e.row.slug,
+export function pinItems(entries: readonly TreeEntry[]): PickItem[] {
+  return entries.map((e) => ({
+    value: e.address,
+    text: e.slug,
+    label: treePrefix(e) + e.slug,
   }))
 }
 
@@ -110,28 +106,27 @@ async function handler(
   pi: ExtensionAPI,
   ctx: ExtensionContext,
 ): Promise<void> {
-  const pins = parsePinned(
+  const entries = parseTree(
     await cueBestEffort(pi, ctx.cwd, [
       "context",
-      "list",
-      "--json",
+      "tree",
       "--pinned",
       "--sort",
       "recency",
+      "--json",
     ]),
   )
-  if (pins.length === 0) {
+  if (entries.length === 0) {
     ctx.ui.notify("cue: no pinned contexts in this scope", "info")
     return
   }
-  const choice = await fuzzySelect(ctx.ui, "Cue context", pinItems(pins), {
+  const choice = await fuzzySelect(ctx.ui, "Cue context", pinItems(entries), {
     submitHint: "inject",
     altHint: "link only",
   })
-  const picked = pins.find((p) => p.address === choice?.value)
-  if (!picked || !choice) return
+  if (!choice) return
   if (choice.action === "alt") {
-    await linkContext(pi, picked.address)
+    await linkContext(pi, choice.value)
     return
   }
   if (!ctx.isIdle()) {
@@ -141,7 +136,7 @@ async function handler(
     )
     return
   }
-  await injectContext(pi, ctx.cwd, picked.address)
+  await injectContext(pi, ctx.cwd, choice.value)
 }
 
 /** Keybinding that opens the pins picker, same as `/cue:context:pins`. */

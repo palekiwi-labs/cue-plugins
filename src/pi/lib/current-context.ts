@@ -33,48 +33,6 @@ export function slugOf(address: string): string {
   return parts[parts.length - 1] ?? ""
 }
 
-export interface PinnedContext {
-  slug: string
-  address: string
-  /** Canonical address of the parent context, when it has one. */
-  parent?: string
-  /** Newest log entry (Unix seconds); 0 when never logged. */
-  lastLoggedAt: number
-}
-
-/**
- * Parse `cue context list --json --pinned --sort recency`: keep the CLI
- * order (newest log entry first, never-logged last) and drop malformed
- * rows.
- */
-export function parsePinned(stdout: string): PinnedContext[] {
-  let rows: unknown
-  try {
-    rows = JSON.parse(stdout || "[]")
-  } catch {
-    return []
-  }
-  if (!Array.isArray(rows)) return []
-  const out: PinnedContext[] = []
-  for (const r of rows as {
-    context?: unknown
-    scope?: unknown
-    parent?: unknown
-    last_logged_at?: unknown
-  }[]) {
-    if (typeof r?.context !== "string" || typeof r?.scope !== "string") continue
-    const pin: PinnedContext = {
-      slug: r.context,
-      address: `${r.scope}/${r.context}`,
-      lastLoggedAt:
-        typeof r.last_logged_at === "number" ? r.last_logged_at : 0,
-    }
-    if (typeof r.parent === "string" && r.parent !== "") pin.parent = r.parent
-    out.push(pin)
-  }
-  return out
-}
-
 /**
  * Canonical address of the last cue-context injection or link on the
  * branch, or undefined when there is none.
