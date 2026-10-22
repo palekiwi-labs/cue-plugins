@@ -93,12 +93,23 @@ export async function linkContext(
  * Picker items for pinned contexts, as a parent-child tree like
  * cue.nvim's pins picker. Values are addresses (slugs may repeat across
  * scopes); labels are the tree-indented slugs.
+ *
+ * When pins span multiple scopes (custom scope in a coordination
+ * workspace), every row gains the scope as a muted right column and
+ * the fuzzy haystack includes it, so bare slugs stay unambiguous and
+ * typing a repo name narrows to that repo's pins. Single-scope lists
+ * render exactly as before.
  */
 export function pinItems(entries: readonly TreeEntry[]): PickItem[] {
+  const scopes = new Set(
+    entries.map((e) => e.address.slice(0, e.address.length - e.slug.length - 1)),
+  )
+  const mixed = scopes.size > 1
   return entries.map((e) => ({
     value: e.address,
-    text: e.slug,
+    text: mixed ? `${e.slug} ${e.address}` : e.slug,
     label: treePrefix(e) + e.slug,
+    ...(mixed ? { right: e.address.slice(0, e.address.length - e.slug.length - 1) } : {}),
   }))
 }
 
@@ -120,7 +131,7 @@ async function handler(
     ctx.ui.notify("cue: no pinned contexts in this scope", "info")
     return
   }
-  const choice = await fuzzySelect(ctx.ui, "Cue context", pinItems(entries), {
+  const choice = await fuzzySelect(ctx.ui, "", pinItems(entries), {
     submitHint: "inject",
     altHint: "link only",
   })

@@ -25,11 +25,14 @@ export function fuzzyNarrow(items: string[], query: string): string[] {
  * the query fuzzy-matches and what a filtered list shows (default:
  * value). `label` (e.g. a tree-indented slug) is shown only while the
  * query is empty, since a filtered list breaks the structure it draws.
+ * `right` is a muted meta column (e.g. the context's scope), aligned
+ * across rows; shown alongside `label` when the query is empty.
  */
 export interface PickItem {
   value: string
   text?: string
   label?: string
+  right?: string
 }
 
 /**
@@ -68,6 +71,11 @@ export async function fuzzySelect(
   const picks: PickItem[] = items.map((i) =>
     typeof i === "string" ? { value: i } : i,
   )
+  /** Left-column width so `right` meta aligns across rows. */
+  const leftWidth = Math.max(
+    0,
+    ...picks.map((p) => (p.label ?? p.text ?? p.value).length),
+  )
 
   const picked = await ui.custom<Picked | null>((tui, theme, kb, done) => {
     const listTheme = {
@@ -86,10 +94,19 @@ export async function fuzzySelect(
       const query = input.getValue()
       const textOf = (p: PickItem) => p.text ?? p.value
       const shown = fuzzyFilter(picks, query, textOf)
-      const entries: SelectItem[] = shown.map((p) => ({
-        value: p.value,
-        label: query.trim() === "" ? (p.label ?? textOf(p)) : textOf(p),
-      }))
+      const plain = (query.trim() === "")
+      const entries: SelectItem[] = shown.map((p) => {
+        let label: string
+        if (plain) {
+          const left = p.label ?? textOf(p)
+          label = p.right
+            ? left.padEnd(leftWidth + 2) + theme.fg("muted", p.right)
+            : left
+        } else {
+          label = textOf(p)
+        }
+        return { value: p.value, label }
+      })
       list = new SelectList(entries, MAX_VISIBLE, listTheme)
       list.onSelect = (item) => done({ value: item.value, action: "submit" })
       list.onCancel = () => done(null)
@@ -108,7 +125,7 @@ export async function fuzzySelect(
     const container = new Container()
     const border = () => new DynamicBorder((s: string) => theme.fg("accent", s))
     container.addChild(border())
-    container.addChild(new Text(theme.fg("accent", theme.bold(title))))
+    if (title) container.addChild(new Text(theme.fg("accent", theme.bold(title))))
     container.addChild(input)
     container.addChild(holder)
     container.addChild(

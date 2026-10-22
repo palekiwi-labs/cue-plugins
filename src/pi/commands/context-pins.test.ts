@@ -230,4 +230,13 @@ describe("pinItems tree", () => {
     ])
     expect(items[2]).toMatchObject({ value: "a/b/leaf", text: "leaf" })
   })
+
+  test("mixed scopes add a right column and scope haystack", () => {
+    const items = pinItems([
+      entry("root", 0, false),
+      { slug: "ext", address: "x/y/ext", depth: 1, connectors: [], isLast: true },
+    ])
+    expect(items[0]).toMatchObject({ text: "root a/b/root", right: "a/b" })
+    expect(items[1]).toMatchObject({ right: "x/y", text: "ext x/y/ext" })
+  })
 })
