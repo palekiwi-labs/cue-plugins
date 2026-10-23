@@ -66,14 +66,14 @@ Adhere strictly to your system prompt:
 4. Use grep, glob, and ranged read (offset + limit) for context.
 5. Sweep the 5-category taxonomy checklist (Correctness, Efficiency, Maintainability, Security, Testing & Observability).
 6. Save your findings JSON with proof_of_work using cue-review (filename: "RUN_ID/reviewer-REVIEWER_SLUG.json", context: "CONTEXT_SLUG"). Do not add suffixes or rename on collision: the run directory is unique to this run.
-7. Report back the saved review artifact path, summary count of findings, and files examined.
+7. Report back the saved review artifact path and summary count of findings.
 \`\`\`
 
 ### 3. Parse and Aggregate Findings
 When both reviewers return:
 1. Use the \`read\` tool to read the JSON findings from the review artifact paths reported by each reviewer.
 2. Confirm both reported paths live under \`review/<RUN_ID>/\`; a reviewer reporting any other name (e.g. a suffixed \`reviewer-opus-2.json\`). If both reviewers share an alias, give the second \`REVIEWER_SLUG\` a \`-2\` suffix in its prompt up front deviated from the layout.
-3. Verify proof-of-work: ensure \`proof_of_work\` (falsifiable questions, files examined, categories swept) is populated.
+3. Verify the review reasoning: ensure \`proof_of_work\` (falsifiable questions and categories swept) is populated. Reviewers no longer self-report models or files examined; attribute sources by artifact path and the reviewer task assignment, not guessed runtime model IDs.
 4. Check for reviewer divergence: if there is a severe disparity (e.g. 0 findings vs >3 findings on a substantial diff), note the disparity.
 5. Deduplicate or cluster findings across reviewers that identify the same defect in the same code location.
 6. Collate candidate findings that require verification.

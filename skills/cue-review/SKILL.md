@@ -63,18 +63,34 @@ review artifacts.
    already running for the same context; `--context` overrides the
    automatic name (single target only).
 
+   All four targets accept `--parent <org>/<repo>/<context>` (single
+   target only). When operating inside a feature work context, pass
+   `--parent <current-context-address>` to link the new review context
+   to that work. The parent applies only when creating a context;
+   existing contexts are reused without changing their parent.
+
    Manifests are selected by name: `--manifest <name>` reads
    `~/.config/cue/review/<name>.json` (global only; project-specific
-   ones are name-prefixed, e.g. `spabreaks-...`). Default `review-run`
+   ones are name-prefixed, e.g. `spabreaks-...`). Default `default`
    (reviewers opus+sol, merger sol, verifier opus; ~$0.5, minutes/PR).
+   Other manifests: `unslop` (AI-slop check against the slop registry,
+   one cheap reviewer, no verify; use when asked for an unslop or slop
+   review). List all with `ls ~/.config/cue/review/*.json`; pick the one
+   the operator names, else `default`.
 3. **Collect**: `cue-review status` lists windows with
    `@review_state` (running/ok/failed/pending). When `ok`, read:
    - findings: `<scope>/<context>/review/<RUN_ID>/verifiers-<name>.json`
      (verified findings; refuted ones stay, marked dismissed)
    - merge list `merge-<name>.json`; raw reviews `reviewers-<name>.json`
-   - run record `run.json` (target kind, refs as fired, resolved SHAs —
-     the lineage of this run; older runs in the context may review a
-     different revision, always check this first)
+   - run record `run.json`: check target and resolved SHAs first; older
+     runs may review a different revision. Version 1 records manifest,
+     phase/entry inputs and artifacts, receipt metrics and errors, and
+     bounded observed model/tool activity. `receipt.model` is
+     configuration-first; `observed.models` comes from runtime events.
+     Missing receipts/streams are explicit, not zero-cost/no-activity.
+     `observed.requests` are tool requests, not proof of files read or
+     comprehension. Resolve finding `source_ids` to entry artifact paths
+     for provenance; new agent artifacts do not repeat model metadata.
    - diff `<scope>/<context>/tmp/<RUN_ID>/review.diff`; traces `trace/agent/`
 
    RUN_ID is unique per run; the newest `review/<RUN_ID>/` supersedes
@@ -82,9 +98,14 @@ review artifacts.
 4. **Discuss and triage**: walk findings with the operator
    (`file:line_start-line_end` locations). Triage means updating a
    finding's `status` (`applied`) or `dismiss_reason` (`dismissed`)
-   in place in the latest verifier artifact — nothing else in review
-   artifacts is edited. Addressing agreed findings happens as normal
+   in place in the latest verifier artifact. Agent artifacts otherwise
+   stay immutable. The runner alone atomically updates `run.json` after
+   each phase; never edit its provenance during triage. Addressing agreed
+   findings happens as normal
    build work afterwards, logged as milestones.
 
-Interrupted runs (state `failed`, exit 130) may hold partial artifacts;
-the interrupted phase stopped cleanly and later phases never started.
+Interrupted runs (window state `failed`, exit 130) may hold partial
+artifacts. A hard interruption can leave `run.json` at its last completed
+phase with state `running`; this is not proof of a live process or clean
+cleanup. A reported abort is recorded as `aborted`; later phases are
+skipped. Failed/incomplete runs may also contain usable artifacts.
