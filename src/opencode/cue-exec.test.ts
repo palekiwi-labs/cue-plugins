@@ -64,7 +64,7 @@ describe("runCue", () => {
         ["log", "add", "--store", store, "--context", "does-not-exist", "--title", "t"],
         repoDir,
       ),
-    ).rejects.toThrow("Context does not exist: does-not-exist")
+    ).rejects.toThrow(/Context does not exist: (palekiwi-labs\/cue-plugins\/)?does-not-exist/)
   })
 
   test("the thrown message names the subcommand and run directory", async () => {
